@@ -1,4 +1,4 @@
-namespace Pledge.Tests;
+namespace PledgeContracts.Tests;
 
 public sealed class SmokeTests
 {

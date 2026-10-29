@@ -69,7 +69,7 @@ public decimal Withdraw(decimal amount)
 private void BalanceNeverNegative() => Pledge.Invariant(Balance >= 0);
 ```
 
-**MVP surface (static class Pledge, namespace Pledge):**
+**MVP surface (static class `Pledge`, namespace `PledgeContracts`):**
 
 | Member | Meaning | Notes |
 | --- | --- | --- |
@@ -334,7 +334,7 @@ Six things no current option offers together; the first three are the headline, 
 
 Decisions that change the API shape or the pitch and should be settled before the first public commit.
 
-**Decided (Oct 29, 2026): the name is Pledge.** Static class `Pledge`, namespace `Pledge`; packages `Pledge` (runtime, generator, analyzers and code fixes; the Roslyn components are one `Pledge.Roslyn` assembly plus a `Pledge.Roslyn.CodeFixes` assembly, both under `analyzers/dotnet/cs`), `Pledge.Testing` with `Pledge.Testing.Xunit` and `Pledge.Testing.TUnit` adapters, `Pledge.Attributes` (`netstandard2.0`). Base exception `BrokenPledgeException`. Analyzer IDs keep the `DBC` prefix, since they name the concept rather than the brand. Rejected: `Contract` (BCL collision and the ccrewrite trap), Vow/Avow (vow-lang is a contracts-first language for AI agents in the same niche), Pact (contract testing), Covenant (.NET C2 framework), Bond (Microsoft Bond), Oath (sounds like OAuth).
+**Decided (Oct 29, 2026): the name is Pledge.** Static class `Pledge`, namespace `PledgeContracts`. The class cannot share its name with a root namespace: C# binds a simple name to a namespace member before it consults using directives, so a `Pledge` namespace anywhere in a compilation would make `Pledge.Requires(...)` fail with CS0234. The plural-namespace, singular-class shape is the BCL's own (`System.Diagnostics.Contracts.Contract`, `System.Threading.Tasks.Task`). Consequences: no shipped assembly declares a namespace rooted at `Pledge` (a test enforces this), the generator emits into `PledgeContracts.Generated`, and package IDs keep the `Pledge` prefix while namespaces take `PledgeContracts` (`PledgeContracts.Testing`, `PledgeContracts.Testing.Xunit`, ...). Packages `Pledge` (runtime, generator, analyzers and code fixes; the Roslyn components are one `Pledge.Roslyn` assembly plus a `Pledge.Roslyn.CodeFixes` assembly, both under `analyzers/dotnet/cs`), `Pledge.Testing` with `Pledge.Testing.Xunit` and `Pledge.Testing.TUnit` adapters, `Pledge.Attributes` (`netstandard2.0`). Base exception `BrokenPledgeException`. Analyzer IDs keep the `DBC` prefix, since they name the concept rather than the brand. Rejected: `Contract` (BCL collision and the ccrewrite trap), Vow/Avow (vow-lang is a contracts-first language for AI agents in the same niche), Pact (contract testing), Covenant (.NET C2 framework), Bond (Microsoft Bond), Oath (sounds like OAuth).
 
 - [ ] **Static class name (resolved above; reasoning kept for the record).** `Contract.*` reads naturally and matches csharplang #105, but collides with `System.Diagnostics.Contracts.Contract` for anyone who imports both — and that class carries the ccrewrite booby trap. Options: keep `Contract` in a distinct namespace and ship an analyzer that flags the BCL one; or use a distinct short name (`Dbc.Requires`, `Spec.Ensures`). Recommendation: distinct name; the BCL collision is a support burden forever.
 - [ ] **Fail-fast vs throw default.** The csharplang thread fought this for years; C++26 made it a build mode. Recommendation: throw by default in `Enforce`, offer `EnforceFailFast`, document when each is right.

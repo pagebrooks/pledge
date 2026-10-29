@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace Pledge.Roslyn.Tests;
+namespace PledgeContracts.Roslyn.Tests;
 
 public sealed class SmokeTests
 {

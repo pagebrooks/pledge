@@ -11,6 +11,13 @@
     <!-- Explicit so nested Directory.Build.props files (src/, tests/) do not each get their own artifacts/ folder. -->
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+    <!--
+      Namespaces are rooted at PledgeContracts, never at Pledge. C# resolves a simple name against namespace
+      members before using directives, so a root namespace named Pledge anywhere in a compilation would make
+      `Pledge.Requires(...)` bind to the namespace and fail (CS0234). Package and assembly names keep the Pledge
+      prefix; only the namespace moves. Pledge.Attributes overrides this to put its types in PledgeContracts itself.
+    -->
+    <RootNamespace Condition="$(MSBuildProjectName.StartsWith('Pledge'))">$(MSBuildProjectName.Replace('Pledge', 'PledgeContracts'))</RootNamespace>
     <!-- Trim and AOT warnings are listed one per site, not collapsed to one per assembly. -->
     <TrimmerSingleWarn>false</TrimmerSingleWarn>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>

@@ -7,7 +7,7 @@
     remove; analyzer DBC005 reports the cases where this import did not take effect.
   -->
   <PropertyGroup>
-    <InterceptorsNamespaces>$(InterceptorsNamespaces);Pledge.Generated</InterceptorsNamespaces>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);PledgeContracts.Generated</InterceptorsNamespaces>
   </PropertyGroup>
 
 </Project>

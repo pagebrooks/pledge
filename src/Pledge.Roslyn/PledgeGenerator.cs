@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace Pledge.Roslyn;
+namespace PledgeContracts.Roslyn;
 
 [Generator(LanguageNames.CSharp)]
 public sealed class PledgeGenerator : IIncrementalGenerator

@@ -28,6 +28,11 @@ public decimal Withdraw(decimal amount)
 }
 ```
 
+Everything lives in the `PledgeContracts` namespace. The package is `Pledge` and so is the
+class; a C# type cannot share its name with a root namespace without `Pledge.Requires(...)`
+binding to the namespace instead, so the namespace takes the longer name and is typed once per
+file.
+
 Enforcement is an MSBuild property with C++26's vocabulary: `Ignore` (byte-identical IL to a
 project without the package), `Observe`, `Enforce` (default in Debug) and `EnforceFailFast`.
 
@@ -35,7 +40,7 @@ project without the package), `Observe`, `Enforce` (default in Debug) and `Enfor
 
 | Path | Package | Purpose |
 | --- | --- | --- |
-| `src/Pledge` | `Pledge` | Runtime: the `Pledge` static class, `PledgeRuntime`, violation exceptions. Ships the generator, analyzers and code fixes in `analyzers/dotnet/cs` and wires `InterceptorsNamespaces` through `build/Pledge.props`. |
+| `src/Pledge` | `Pledge` | Runtime: the `Pledge` static class (namespace `PledgeContracts`), `PledgeRuntime`, violation exceptions. Ships the generator, analyzers and code fixes in `analyzers/dotnet/cs` and wires `InterceptorsNamespaces` through `build/Pledge.props`. |
 | `src/Pledge.Roslyn` | (inside `Pledge`) | Compiler side: the incremental generator and analyzers DBC001-DBC008 in one assembly, since they share the contract-reading code. |
 | `src/Pledge.Attributes` | `Pledge.Attributes` | `netstandard2.0` metadata attributes so libraries can carry contract metadata without the runtime. |
 | `src/Pledge.Roslyn.CodeFixes` | (inside `Pledge`) | Code fixes, apart from the analyzers because they need Microsoft.CodeAnalysis.Workspaces. |

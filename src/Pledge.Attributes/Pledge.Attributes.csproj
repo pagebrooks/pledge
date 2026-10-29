@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- Same namespace as the Pledge package so one using directive covers the class and the attributes. -->
+    <RootNamespace>PledgeContracts</RootNamespace>
     <Description>Contract metadata attributes for Pledge. Lets libraries carry contract metadata without taking a runtime dependency.</Description>
   </PropertyGroup>
 
