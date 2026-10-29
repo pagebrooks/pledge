@@ -69,6 +69,14 @@ pre-commit install --install-hooks
 They format staged C# with `dotnet format`, check YAML, JSON and MSBuild XML, validate the GitHub
 workflows, and hold commit messages to Conventional Commits. CI runs the same hooks.
 
+Every shipped assembly tracks its public surface in `PublicAPI.Shipped.txt` and
+`PublicAPI.Unshipped.txt` next to the project file. A build fails when a public member is added or
+removed without a matching edit; apply the fix for new members with:
+
+```sh
+dotnet format analyzers Pledge.slnx --diagnostics RS0016 --severity warn
+```
+
 Build output goes to `artifacts/` (the .NET artifacts output layout). Assemblies are strong-named
 with the checked-in `Pledge.snk`, versions come from git tags, and `samples/BankAccount` is published
 with Native AOT in CI as the trim and AOT canary. See [RELEASING.md](RELEASING.md) for how releases

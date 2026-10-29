@@ -137,7 +137,7 @@ The body's original `Pledge.*` calls remain in source and compile away (`[Condit
 | Mode | Behavior | Cost | C++26 equivalent |
 | --- | --- | --- | --- |
 | `Ignore` | Generator emits no wrappers; calls compile away | Zero | ignore |
-| `Observe` | Checks run; violations go to `ContractRuntime.ViolationHandler` and execution continues | Checks + handler | observe |
+| `Observe` | Checks run; violations go to `PledgeRuntime.ViolationHandler` and execution continues | Checks + handler | observe |
 | `Enforce` | Checks run; violations throw the kind-specific exception | Checks | enforce |
 | `EnforceFailFast` | Checks run; violations call `Environment.FailFast` after the handler | Checks | quick-enforce |
 

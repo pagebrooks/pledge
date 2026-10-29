@@ -1,0 +1,56 @@
+#nullable enable
+override PledgeContracts.PledgeViolation.Equals(object? obj) -> bool
+override PledgeContracts.PledgeViolation.GetHashCode() -> int
+override PledgeContracts.PledgeViolation.ToString() -> string!
+PledgeContracts.BrokenPledgeException
+PledgeContracts.BrokenPledgeException.Blame.get -> PledgeContracts.PledgeBlame
+PledgeContracts.BrokenPledgeException.BrokenPledgeException(PledgeContracts.PledgeViolation! violation, PledgeContracts.PledgeKind expectedKind) -> void
+PledgeContracts.BrokenPledgeException.Kind.get -> PledgeContracts.PledgeKind
+PledgeContracts.BrokenPledgeException.Violation.get -> PledgeContracts.PledgeViolation!
+PledgeContracts.InvariantViolationException
+PledgeContracts.InvariantViolationException.InvariantViolationException(PledgeContracts.PledgeViolation! violation) -> void
+PledgeContracts.Pledge
+PledgeContracts.PledgeBlame
+PledgeContracts.PledgeBlame.Callee = 1 -> PledgeContracts.PledgeBlame
+PledgeContracts.PledgeBlame.Caller = 0 -> PledgeContracts.PledgeBlame
+PledgeContracts.PledgeKind
+PledgeContracts.PledgeKind.Invariant = 2 -> PledgeContracts.PledgeKind
+PledgeContracts.PledgeKind.Postcondition = 1 -> PledgeContracts.PledgeKind
+PledgeContracts.PledgeKind.Precondition = 0 -> PledgeContracts.PledgeKind
+PledgeContracts.PledgeRuntime
+PledgeContracts.PledgeViolation
+PledgeContracts.PledgeViolation.<Clone>$() -> PledgeContracts.PledgeViolation!
+PledgeContracts.PledgeViolation.Blame.get -> PledgeContracts.PledgeBlame
+PledgeContracts.PledgeViolation.CallerFilePath.get -> string?
+PledgeContracts.PledgeViolation.CallerFilePath.init -> void
+PledgeContracts.PledgeViolation.CallerLineNumber.get -> int
+PledgeContracts.PledgeViolation.CallerLineNumber.init -> void
+PledgeContracts.PledgeViolation.Cause.get -> System.Exception?
+PledgeContracts.PledgeViolation.Cause.init -> void
+PledgeContracts.PledgeViolation.Equals(PledgeContracts.PledgeViolation? other) -> bool
+PledgeContracts.PledgeViolation.Expression.get -> string!
+PledgeContracts.PledgeViolation.Expression.init -> void
+PledgeContracts.PledgeViolation.Kind.get -> PledgeContracts.PledgeKind
+PledgeContracts.PledgeViolation.Kind.init -> void
+PledgeContracts.PledgeViolation.Member.get -> string!
+PledgeContracts.PledgeViolation.Member.init -> void
+PledgeContracts.PledgeViolation.Message.get -> string?
+PledgeContracts.PledgeViolation.Message.init -> void
+PledgeContracts.PledgeViolation.PledgeViolation() -> void
+PledgeContracts.PostconditionViolationException
+PledgeContracts.PostconditionViolationException.PostconditionViolationException(PledgeContracts.PledgeViolation! violation) -> void
+PledgeContracts.PreconditionViolationException
+PledgeContracts.PreconditionViolationException.PreconditionViolationException(PledgeContracts.PledgeViolation! violation) -> void
+static PledgeContracts.BrokenPledgeException.From(PledgeContracts.PledgeViolation! violation) -> PledgeContracts.BrokenPledgeException!
+static PledgeContracts.Pledge.Ensures(bool condition, string? message = null) -> void
+static PledgeContracts.Pledge.EnsuresOnThrow<TException>(bool condition, string? message = null) -> void
+static PledgeContracts.Pledge.Old<T>(T expression) -> T
+static PledgeContracts.Pledge.Requires(bool condition, string? message = null) -> void
+static PledgeContracts.Pledge.Result<T>() -> T
+static PledgeContracts.PledgeRuntime.Enforce(PledgeContracts.PledgeViolation! violation) -> void
+static PledgeContracts.PledgeRuntime.EnforceFailFast(PledgeContracts.PledgeViolation! violation) -> void
+static PledgeContracts.PledgeRuntime.Observe(PledgeContracts.PledgeViolation! violation) -> void
+static PledgeContracts.PledgeRuntime.ViolationHandler.get -> System.Action<PledgeContracts.PledgeViolation!>?
+static PledgeContracts.PledgeRuntime.ViolationHandler.set -> void
+static PledgeContracts.PledgeViolation.operator !=(PledgeContracts.PledgeViolation? left, PledgeContracts.PledgeViolation? right) -> bool
+static PledgeContracts.PledgeViolation.operator ==(PledgeContracts.PledgeViolation? left, PledgeContracts.PledgeViolation? right) -> bool

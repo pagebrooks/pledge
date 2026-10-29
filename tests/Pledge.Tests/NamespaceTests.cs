@@ -10,7 +10,7 @@ public sealed class NamespaceTests
     [Fact]
     public void No_shipped_namespace_is_rooted_at_Pledge()
     {
-        Assembly[] shipped = [typeof(Placeholder).Assembly, typeof(AttributesPlaceholder).Assembly];
+        Assembly[] shipped = [typeof(Pledge).Assembly, typeof(RequiresAttribute).Assembly];
 
         var offenders = shipped
             .SelectMany(assembly => assembly.GetTypes())
@@ -24,7 +24,7 @@ public sealed class NamespaceTests
     [Fact]
     public void Attributes_share_the_runtime_namespace()
     {
-        Assert.Equal("Pledge.Attributes", typeof(AttributesPlaceholder).Assembly.GetName().Name);
-        Assert.Equal(typeof(Placeholder).Namespace, typeof(AttributesPlaceholder).Namespace);
+        Assert.Equal("Pledge.Attributes", typeof(RequiresAttribute).Assembly.GetName().Name);
+        Assert.Equal(typeof(Pledge).Namespace, typeof(RequiresAttribute).Namespace);
     }
 }

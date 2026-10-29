@@ -1,0 +1,12 @@
+<Project>
+
+  <!--
+    Public API tracking for every shipped assembly: RS0016/RS0017 fail the build when the surface changes
+    without a matching edit to PublicAPI.Unshipped.txt, and the file moves to PublicAPI.Shipped.txt at release.
+    Targets, not props, because IsPackable is set per project after Directory.Build.props is read.
+  -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

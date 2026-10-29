@@ -9,14 +9,17 @@ the next patch with an `-alpha.0.<commits-since-tag>` suffix, starting at `0.1.0
 ## Cutting a release
 
 1. Confirm `main` is green.
-2. Tag the commit and push the tag:
+2. For a stable release, move every shipped project's `PublicAPI.Unshipped.txt` entries into its
+   `PublicAPI.Shipped.txt` and commit. The public API analyzer compares the surface against these
+   files, so a release tag should ship an empty unshipped list.
+3. Tag the commit and push the tag:
 
    ```sh
    git tag v0.1.0
    git push origin v0.1.0
    ```
 
-3. The Release workflow builds, tests and packs, checks the package version against the tag,
+4. The Release workflow builds, tests and packs, checks the package version against the tag,
    signs the packages if a certificate is configured, attests their provenance, pushes them to
    NuGet.org and creates a GitHub release with the packages attached and generated notes. Tags
    with a pre-release suffix are marked as pre-releases.
