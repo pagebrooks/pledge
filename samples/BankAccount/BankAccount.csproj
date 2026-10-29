@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- The same props the NuGet package imports, so this sample builds the way a consumer's project would. -->
+  <!-- The same props and targets the NuGet package imports, so this sample builds the way a consumer's project would. -->
   <Import Project="../../src/Pledge/build/Pledge.props" />
 
   <PropertyGroup>
@@ -8,11 +8,15 @@
     <TargetFramework>net10.0</TargetFramework>
     <!-- The sample doubles as the Native AOT canary: CI publishes it per RID, and TreatWarningsAsErrors makes any trim or AOT warning fatal. -->
     <PublishAot>true</PublishAot>
+    <!-- Checks stay on in Release so the published binary exercises the generated code. -->
+    <PledgeMode>Enforce</PledgeMode>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../src/Pledge/Pledge.csproj" />
     <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
+
+  <Import Project="../../src/Pledge/build/Pledge.targets" />
 
 </Project>

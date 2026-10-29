@@ -26,7 +26,7 @@ public static class Pledge
     }
 
     // Result and Old return values, so they cannot be [Conditional]. They are only legal inside a contract call,
-    // which is itself removed, so a call that reaches this body is outside a contract (DBC002 catches it at build).
+    // which is itself removed, so a call that reaches this body is outside a contract (PLEDGE002 catches it at build).
     public static T Result<T>() =>
         throw new InvalidOperationException("Pledge.Result<T>() stands for the return value inside Pledge.Ensures and has no meaning elsewhere.");
 

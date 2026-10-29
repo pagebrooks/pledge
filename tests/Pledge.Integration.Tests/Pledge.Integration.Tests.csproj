@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Wired the way a consumer's project is wired by the NuGet package: props before, targets after. -->
+  <Import Project="../../src/Pledge/build/Pledge.props" />
+
+  <PropertyGroup>
+    <!-- Explicit, because CI builds Release and the default there is Ignore. -->
+    <PledgeMode>Enforce</PledgeMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Pledge/Pledge.csproj" />
+    <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <Import Project="../../src/Pledge/build/Pledge.targets" />
+
+</Project>

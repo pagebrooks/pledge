@@ -5,7 +5,7 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <!--
-      The compiler side of Pledge. The incremental generator and the DBC analyzers share this assembly
+      The compiler side of Pledge. The incremental generator and the PLEDGE analyzers share this assembly
       because they share the code that reads contracts out of method bodies. Ships inside the Pledge
       package under analyzers/dotnet/cs (see src/Pledge/Pledge.csproj); never packed on its own.
     -->
@@ -15,6 +15,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
 
   <ItemGroup>

@@ -28,6 +28,7 @@
     <Project Path="src/Pledge/Pledge.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Pledge.Integration.Tests/Pledge.Integration.Tests.csproj" />
     <Project Path="tests/Pledge.Roslyn.Tests/Pledge.Roslyn.Tests.csproj" />
     <Project Path="tests/Pledge.Testing.Tests/Pledge.Testing.Tests.csproj" />
     <Project Path="tests/Pledge.Tests/Pledge.Tests.csproj" />

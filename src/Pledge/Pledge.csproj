@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <None Include="build/Pledge.props" Pack="true" PackagePath="build/" />
+    <None Include="build/Pledge.targets" Pack="true" PackagePath="build/" />
     <None Include="$(ArtifactsPath)/bin/Pledge.Roslyn/$(Configuration.ToLowerInvariant())/Pledge.Roslyn.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
     <None Include="$(ArtifactsPath)/bin/Pledge.Roslyn.CodeFixes/$(Configuration.ToLowerInvariant())/Pledge.Roslyn.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
   </ItemGroup>

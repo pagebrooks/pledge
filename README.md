@@ -8,9 +8,10 @@ them out at build time and checks them through interceptors. Contract violations
 blame attached (caller or callee), not validation failures, so FluentValidation and guard
 clauses keep their jobs.
 
-> **Status: pre-alpha skeleton.** The solution builds, the tests run and the packages pack,
-> but nothing is implemented yet. The full design, semantics and roadmap are in
-> [DESIGN.md](DESIGN.md).
+> **Status: pre-alpha.** Preconditions (`Pledge.Requires`) on methods work end to end through
+> the source generator and interceptors, including the enforcement modes, caller blame with
+> file and line, and a Native AOT sample. Postconditions, `Old()`, analyzers and the testing
+> bridge are next. The full design, semantics and roadmap are in [DESIGN.md](DESIGN.md).
 
 ## What it will look like
 
@@ -34,20 +35,34 @@ binding to the namespace instead, so the namespace takes the longer name and is 
 file.
 
 Enforcement is an MSBuild property with C++26's vocabulary: `Ignore` (byte-identical IL to a
-project without the package), `Observe`, `Enforce` (default in Debug) and `EnforceFailFast`.
+project without the package, the default in Release), `Observe`, `Enforce` (default in Debug)
+and `EnforceFailFast`:
+
+```xml
+<PropertyGroup>
+  <PledgeMode>Enforce</PledgeMode>
+</PropertyGroup>
+```
+
+A broken precondition throws `PreconditionViolationException` whose message names the contract,
+the member and the call site:
+
+```text
+Precondition of Account.Withdraw violated by its caller: insufficient funds [amount <= Balance] (at /src/Program.cs:9)
+```
 
 ## Repository layout
 
 | Path | Package | Purpose |
 | --- | --- | --- |
 | `src/Pledge` | `Pledge` | Runtime: the `Pledge` static class (namespace `PledgeContracts`), `PledgeRuntime`, violation exceptions. Ships the generator, analyzers and code fixes in `analyzers/dotnet/cs` and wires `InterceptorsNamespaces` through `build/Pledge.props`. |
-| `src/Pledge.Roslyn` | (inside `Pledge`) | Compiler side: the incremental generator and analyzers DBC001-DBC008 in one assembly, since they share the contract-reading code. |
+| `src/Pledge.Roslyn` | (inside `Pledge`) | Compiler side: the incremental generator and analyzers PLEDGE001-PLEDGE008 in one assembly, since they share the contract-reading code. |
 | `src/Pledge.Attributes` | `Pledge.Attributes` | `netstandard2.0` metadata attributes so libraries can carry contract metadata without the runtime. |
 | `src/Pledge.Roslyn.CodeFixes` | (inside `Pledge`) | Code fixes, apart from the analyzers because they need Microsoft.CodeAnalysis.Workspaces. |
 | `src/Pledge.Testing` | `Pledge.Testing` | Contracts as property-based test oracles, CsCheck backend. |
 | `src/Pledge.Testing.Xunit` | `Pledge.Testing.Xunit` | xUnit.net v3 adapter. |
 | `src/Pledge.Testing.TUnit` | `Pledge.Testing.TUnit` | TUnit adapter. |
-| `tests/` | | xUnit v3 test projects, one per area. |
+| `tests/` | | xUnit v3 test projects, one per area. `Pledge.Integration.Tests` consumes the generator the way a package consumer does. |
 | `samples/BankAccount` | | The bank-account domain under contracts. |
 
 ## Building

@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <!-- The harness compiles snippets against the real runtime assemblies and runs the generated code. -->
+    <ProjectReference Include="../../src/Pledge/Pledge.csproj" />
     <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" />
     <ProjectReference Include="../../src/Pledge.Roslyn.CodeFixes/Pledge.Roslyn.CodeFixes.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />

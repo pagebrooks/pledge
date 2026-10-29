@@ -1,0 +1,23 @@
+<Project>
+
+  <!--
+    Imported after the project file, so a <PledgeMode> set there wins and $(Configuration) is known.
+    Default: Enforce in Debug, Ignore in Release. The property is handed to the generator as
+    build_property.PledgeMode; an unknown value fails the build here rather than being guessed at.
+  -->
+  <PropertyGroup>
+    <PledgeMode Condition="'$(PledgeMode)' == '' and '$(Configuration)' == 'Debug'">Enforce</PledgeMode>
+    <PledgeMode Condition="'$(PledgeMode)' == ''">Ignore</PledgeMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="PledgeMode" />
+  </ItemGroup>
+
+  <Target Name="PledgeValidateMode" BeforeTargets="CoreCompile">
+    <Error
+      Condition="'$(PledgeMode)' != 'Ignore' and '$(PledgeMode)' != 'Observe' and '$(PledgeMode)' != 'Enforce' and '$(PledgeMode)' != 'EnforceFailFast'"
+      Text="PledgeMode '$(PledgeMode)' is not recognized. Use Ignore, Observe, Enforce or EnforceFailFast." />
+  </Target>
+
+</Project>
