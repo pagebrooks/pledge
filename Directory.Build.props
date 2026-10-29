@@ -1,0 +1,40 @@
+<Project>
+
+  <PropertyGroup Label="Build">
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <!-- Explicit so nested Directory.Build.props files (src/, tests/) do not each get their own artifacts/ folder. -->
+    <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <!-- Required in every project for IDE0005 (unnecessary usings) to run at build time: https://github.com/dotnet/roslyn/issues/41640 -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- CS1591 (public member without XML doc): docs are written deliberately, not demanded by the build. -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package">
+    <!-- Only projects under src/ opt back in; see src/Directory.Build.props. -->
+    <IsPackable>false</IsPackable>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix>alpha</VersionSuffix>
+    <Authors>Page Brooks</Authors>
+    <Product>Pledge</Product>
+    <Copyright>Copyright (c) 2026 Page Brooks</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/pagebrooks/pledge</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/pagebrooks/pledge</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>design-by-contract;contracts;preconditions;postconditions;invariants;roslyn;source-generator;interceptors</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+</Project>

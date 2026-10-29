@@ -1,0 +1,13 @@
+<Project>
+
+  <!--
+    NuGet imports this into every project that references the Pledge package.
+    It registers the namespace the generator emits interceptors into, so the compiler
+    accepts them (SDK 9+, C# 13+). This is the one setup step the package exists to
+    remove; analyzer DBC005 reports the cases where this import did not take effect.
+  -->
+  <PropertyGroup>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Pledge.Generated</InterceptorsNamespaces>
+  </PropertyGroup>
+
+</Project>

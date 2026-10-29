@@ -1,0 +1,32 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="DESIGN.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="LICENSE" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/BankAccount/BankAccount.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Pledge.Analyzers.CodeFixes/Pledge.Analyzers.CodeFixes.csproj" />
+    <Project Path="src/Pledge.Analyzers/Pledge.Analyzers.csproj" />
+    <Project Path="src/Pledge.Attributes/Pledge.Attributes.csproj" />
+    <Project Path="src/Pledge.Generator/Pledge.Generator.csproj" />
+    <Project Path="src/Pledge.Testing.TUnit/Pledge.Testing.TUnit.csproj" />
+    <Project Path="src/Pledge.Testing.Xunit/Pledge.Testing.Xunit.csproj" />
+    <Project Path="src/Pledge.Testing/Pledge.Testing.csproj" />
+    <Project Path="src/Pledge/Pledge.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Pledge.Analyzers.Tests/Pledge.Analyzers.Tests.csproj" />
+    <Project Path="tests/Pledge.Generator.Tests/Pledge.Generator.Tests.csproj" />
+    <Project Path="tests/Pledge.Testing.Tests/Pledge.Testing.Tests.csproj" />
+    <Project Path="tests/Pledge.Tests/Pledge.Tests.csproj" />
+  </Folder>
+</Solution>

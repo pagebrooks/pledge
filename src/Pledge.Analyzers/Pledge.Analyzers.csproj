@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <Description>Roslyn analyzers and code fixes for Pledge contracts (DBC001-DBC008): placement, purity, Result/Old usage and generator setup diagnostics.</Description>
+    <!-- Analyzer package shape: both assemblies under analyzers/dotnet/cs, no lib/ output, no dependencies. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <!-- No lib/ output means an empty symbols package (NU5017); analyzer packages do not ship symbols. -->
+    <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+    <!-- Build-order only. The code fixes ship in this package but are not a compile-time dependency of the analyzers. -->
+    <ProjectReference Include="../Pledge.Analyzers.CodeFixes/Pledge.Analyzers.CodeFixes.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(OutputPath)/Pledge.Analyzers.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
+    <None Include="$(ArtifactsPath)/bin/Pledge.Analyzers.CodeFixes/$(Configuration.ToLowerInvariant())/Pledge.Analyzers.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pledge.Analyzers.Tests" />
+  </ItemGroup>
+
+</Project>

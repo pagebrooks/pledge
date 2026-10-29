@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Pledge.Testing/Pledge.Testing.csproj" />
+    <ProjectReference Include="../../src/Pledge.Testing.Xunit/Pledge.Testing.Xunit.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The same props the NuGet package imports, so this sample builds the way a consumer's project would. -->
+  <Import Project="../../src/Pledge/build/Pledge.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Pledge/Pledge.csproj" />
+    <ProjectReference Include="../../src/Pledge.Generator/Pledge.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,8 @@
+# Normalize line endings to LF everywhere so dotnet format agrees across OSes.
+* text=auto eol=lf
+
+*.cs text diff=csharp
+*.{csproj,props,targets,slnx,xml,config,nuspec} text
+*.{json,yml,yaml,md} text
+
+*.{png,jpg,jpeg,gif,ico,snk,pfx} binary

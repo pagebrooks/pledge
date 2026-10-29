@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      roslyn-testing:
+        patterns:
+          - "Microsoft.CodeAnalysis.*.Testing"
+      xunit:
+        patterns:
+          - "xunit*"
+    ignore:
+      # Pinned to the oldest supported compiler on purpose; see Directory.Packages.props.
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp.Workspaces"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

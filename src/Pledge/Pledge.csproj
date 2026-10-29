@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsAotCompatible>true</IsAotCompatible>
+    <Description>Design by Contract for .NET: preconditions, postconditions, Old() snapshots and invariants written as ordinary C# and checked by a Roslyn source generator. No IL rewriter, no compiler fork.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Pledge.Attributes/Pledge.Attributes.csproj" />
+    <!-- Build-order only. The generator ships inside this package under analyzers/dotnet/cs and is never a runtime dependency. -->
+    <ProjectReference Include="../Pledge.Generator/Pledge.Generator.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="build/Pledge.props" Pack="true" PackagePath="build/" />
+    <None Include="$(ArtifactsPath)/bin/Pledge.Generator/$(Configuration.ToLowerInvariant())/Pledge.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Pledge.Tests" />
+  </ItemGroup>
+
+</Project>
