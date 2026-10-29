@@ -5,9 +5,9 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <!--
-      Ships inside the Pledge.Analyzers package (see src/Pledge.Analyzers/Pledge.Analyzers.csproj); never packed on its own.
-      Code fixes live in their own assembly because they need Microsoft.CodeAnalysis.Workspaces, which the
-      command-line compiler does not load. They do not reference the analyzer assembly; diagnostic ids are shared as source.
+      Code fixes need Microsoft.CodeAnalysis.Workspaces, which the command-line compiler does not load,
+      so they live apart from Pledge.Roslyn and share diagnostic ids with it as linked source, not by
+      assembly reference. Ships inside the Pledge package next to Pledge.Roslyn; never packed on its own.
     -->
     <IsPackable>false</IsPackable>
   </PropertyGroup>
@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Pledge.Analyzers.Tests" />
+    <InternalsVisibleTo Include="Pledge.Roslyn.Tests" />
   </ItemGroup>
 
 </Project>

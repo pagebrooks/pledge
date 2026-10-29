@@ -6,11 +6,13 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
+    <!-- The sample doubles as the Native AOT canary: CI publishes it per RID, and TreatWarningsAsErrors makes any trim or AOT warning fatal. -->
+    <PublishAot>true</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../../src/Pledge/Pledge.csproj" />
-    <ProjectReference Include="../../src/Pledge.Generator/Pledge.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

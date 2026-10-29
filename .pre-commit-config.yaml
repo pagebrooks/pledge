@@ -1,0 +1,47 @@
+# Git hooks run by pre-commit (https://pre-commit.com). Install once per clone:
+#   pre-commit install --install-hooks
+# CI runs the same hooks on every push (minus dotnet-format, which the build job already enforces).
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-json
+      - id: check-yaml
+      - id: check-xml
+        types: [text]
+        files: \.(csproj|props|targets|slnx|xml|nuspec)$
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.39.0
+    hooks:
+      - id: check-github-workflows
+      - id: check-dependabot
+
+  # Commit messages follow Conventional Commits.
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.5.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+
+  - repo: local
+    hooks:
+      - id: dotnet-format
+        name: dotnet format
+        description: Formats staged C# files to the .editorconfig rules (whitespace, style and analyzers). Re-stage anything it changes.
+        entry: dotnet format Pledge.slnx --include
+        language: system
+        types_or: [c#]
+        require_serial: true

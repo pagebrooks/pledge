@@ -21,8 +21,9 @@
   <PropertyGroup Label="Package">
     <!-- Only projects under src/ opt back in; see src/Directory.Build.props. -->
     <IsPackable>false</IsPackable>
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <VersionSuffix>alpha</VersionSuffix>
+    <!-- Versions come from git tags via MinVer (see RELEASING.md): a vX.Y.Z tag is a release, anything else is the next patch as -alpha.0.N. -->
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerMinimumMajorMinor>0.1</MinVerMinimumMajorMinor>
     <Authors>Page Brooks</Authors>
     <Product>Pledge</Product>
     <Copyright>Copyright (c) 2026 Page Brooks</Copyright>
@@ -36,5 +37,21 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <PropertyGroup Label="Signing">
+    <!--
+      Strong naming gives assemblies an identity for binding and InternalsVisibleTo, not trust, so the key is
+      checked in and anyone can build a binary-compatible Pledge. Trust comes from NuGet package signing in
+      the release pipeline (see RELEASING.md). Public key token: 64d74533f2bd81a4.
+    -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)Pledge.snk</AssemblyOriginatorKeyFile>
+    <PledgePublicKey>0024000004800000140100000602000000240000525341310008000001000100ef28d3a33e12ab87b5c7e0815a76aaeed69be6cabf9fca5fb459d84367085f724d27543c4bb01731fac3e37de0489e2b6ae530d2da7dbfb42910e26dd063353f03372ea01572fb1aab97fc2b2d0d35cef3513bf5c9feeacc366e527019818bc4a769155d7aaaf38af203399aa7b5011d271a736c2d7f3e9c32e6498e6b9c56c6be114dd0d397f30350823ed97e12623002cdb71e3414d7f2b8080ae3c0fac9e8bc67bb66d92bffcdf803bb6be107d1b25004cf6647bc048d424a822e91b941b0a3a5de4b38893055cce1ccf68a3223877574ffcfee007d1fa81905d23a1c57a623760e820326858c97a1b39855e50c6080c2d94655ddd142a2b79a7993f83389</PledgePublicKey>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <!-- A strong-named assembly can only grant internals access to strong-named friends, so every InternalsVisibleTo carries the key. -->
+    <InternalsVisibleTo Key="$(PledgePublicKey)" />
+  </ItemDefinitionGroup>
 
 </Project>

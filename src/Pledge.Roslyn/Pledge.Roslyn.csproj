@@ -4,7 +4,11 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    <!-- Ships inside the Pledge package (see src/Pledge/Pledge.csproj); never packed on its own. -->
+    <!--
+      The compiler side of Pledge. The incremental generator and the DBC analyzers share this assembly
+      because they share the code that reads contracts out of method bodies. Ships inside the Pledge
+      package under analyzers/dotnet/cs (see src/Pledge/Pledge.csproj); never packed on its own.
+    -->
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -14,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Pledge.Generator.Tests" />
+    <InternalsVisibleTo Include="Pledge.Roslyn.Tests" />
   </ItemGroup>
 
 </Project>

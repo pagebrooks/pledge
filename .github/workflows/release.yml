@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write   # create the GitHub release
+  id-token: write   # NuGet.org trusted publishing (OIDC)
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  release:
+    name: Pack, sign, publish
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      # Optional. When both are set the packages are Authenticode-signed before publishing; see RELEASING.md.
+      NUGET_SIGNING_CERTIFICATE: ${{ secrets.NUGET_SIGNING_CERTIFICATE }}
+      NUGET_SIGNING_PASSWORD: ${{ secrets.NUGET_SIGNING_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v6
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --solution Pledge.slnx --configuration Release --no-build
+
+      - name: Pack
+        run: dotnet pack --configuration Release --no-build --output artifacts/package
+
+      - name: Check that the package version matches the tag
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          test -f "artifacts/package/Pledge.${version}.nupkg" || { echo "::error::Expected Pledge.${version}.nupkg; MinVer produced:"; ls artifacts/package; exit 1; }
+
+      - name: Sign packages
+        if: env.NUGET_SIGNING_CERTIFICATE != ''
+        run: |
+          printf '%s' "$NUGET_SIGNING_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/signing.pfx"
+          dotnet nuget sign artifacts/package/*.nupkg \
+            --certificate-path "$RUNNER_TEMP/signing.pfx" \
+            --certificate-password "$NUGET_SIGNING_PASSWORD" \
+            --timestamper http://timestamp.digicert.com
+          rm -f "$RUNNER_TEMP/signing.pfx"
+
+      # Short-lived API key from GitHub's OIDC token; no long-lived NuGet secret exists anywhere.
+      - name: Log in to NuGet.org
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Push to NuGet.org
+        run: >
+          dotnet nuget push "artifacts/package/*.nupkg"
+          --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=""
+          case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" artifacts/package/*.nupkg artifacts/package/*.snupkg \
+            --title "$GITHUB_REF_NAME" --generate-notes $prerelease

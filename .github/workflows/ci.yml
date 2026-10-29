@@ -15,6 +15,23 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
 jobs:
+  lint:
+    name: pre-commit hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # dotnet-format is skipped here: the build job runs dotnet format --verify-no-changes with the SDK installed.
+      - name: Run hooks on all files
+        run: pipx run pre-commit run --all-files --show-diff-on-failure
+        env:
+          SKIP: dotnet-format
+
   build:
     name: Build, test, pack (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -24,6 +41,9 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v7
+        with:
+          # MinVer derives the version from tag history.
+          fetch-depth: 0
 
       # Installs the SDK pinned in global.json.
       - uses: actions/setup-dotnet@v6
@@ -49,4 +69,39 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: packages
-          path: artifacts/package/*.nupkg
+          path: |
+            artifacts/package/*.nupkg
+            artifacts/package/*.snupkg
+
+  aot:
+    name: Native AOT publish (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+            binary: BankAccount
+          - os: windows-latest
+            rid: win-x64
+            binary: BankAccount.exe
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v6
+
+      - name: Install native toolchain
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install --yes clang zlib1g-dev
+
+      # TreatWarningsAsErrors turns every IL2xxx/IL3xxx trim or AOT warning into a build failure,
+      # so a green run here is the "zero warnings attributable to the library" exit criterion.
+      - name: Publish the sample with Native AOT
+        run: dotnet publish samples/BankAccount --configuration Release --runtime ${{ matrix.rid }} --output artifacts/aot
+
+      - name: Run the native binary
+        run: ./artifacts/aot/${{ matrix.binary }}
+        shell: bash

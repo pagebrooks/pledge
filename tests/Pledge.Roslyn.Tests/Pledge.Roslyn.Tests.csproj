@@ -1,10 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="../../src/Pledge.Generator/Pledge.Generator.csproj" />
+    <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" />
+    <ProjectReference Include="../../src/Pledge.Roslyn.CodeFixes/Pledge.Roslyn.CodeFixes.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 

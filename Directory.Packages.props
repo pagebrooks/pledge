@@ -5,6 +5,10 @@
     <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
+  <ItemGroup Label="Build">
+    <PackageVersion Include="MinVer" Version="8.0.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Roslyn">
     <!--
       Pinned to the compiler that ships with the oldest supported SDK (10.0.100), so the generator

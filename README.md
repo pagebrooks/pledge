@@ -35,11 +35,10 @@ project without the package), `Observe`, `Enforce` (default in Debug) and `Enfor
 
 | Path | Package | Purpose |
 | --- | --- | --- |
-| `src/Pledge` | `Pledge` | Runtime: the `Pledge` static class, `PledgeRuntime`, violation exceptions. Ships the generator in `analyzers/dotnet/cs` and wires `InterceptorsNamespaces` through `build/Pledge.props`. |
-| `src/Pledge.Generator` | (inside `Pledge`) | Incremental source generator: lifts contracts into interceptor wrappers and metadata attributes. |
+| `src/Pledge` | `Pledge` | Runtime: the `Pledge` static class, `PledgeRuntime`, violation exceptions. Ships the generator, analyzers and code fixes in `analyzers/dotnet/cs` and wires `InterceptorsNamespaces` through `build/Pledge.props`. |
+| `src/Pledge.Roslyn` | (inside `Pledge`) | Compiler side: the incremental generator and analyzers DBC001-DBC008 in one assembly, since they share the contract-reading code. |
 | `src/Pledge.Attributes` | `Pledge.Attributes` | `netstandard2.0` metadata attributes so libraries can carry contract metadata without the runtime. |
-| `src/Pledge.Analyzers` | `Pledge.Analyzers` | Analyzers DBC001-DBC008. Ships the code fixes alongside in `analyzers/dotnet/cs`. |
-| `src/Pledge.Analyzers.CodeFixes` | (inside `Pledge.Analyzers`) | Code fixes, in their own assembly because they need Microsoft.CodeAnalysis.Workspaces. |
+| `src/Pledge.Roslyn.CodeFixes` | (inside `Pledge`) | Code fixes, apart from the analyzers because they need Microsoft.CodeAnalysis.Workspaces. |
 | `src/Pledge.Testing` | `Pledge.Testing` | Contracts as property-based test oracles, CsCheck backend. |
 | `src/Pledge.Testing.Xunit` | `Pledge.Testing.Xunit` | xUnit.net v3 adapter. |
 | `src/Pledge.Testing.TUnit` | `Pledge.Testing.TUnit` | TUnit adapter. |
@@ -56,7 +55,19 @@ dotnet test
 dotnet pack
 ```
 
-Build output goes to `artifacts/` (the .NET artifacts output layout).
+Install the git hooks once per clone with [pre-commit](https://pre-commit.com):
+
+```sh
+pre-commit install --install-hooks
+```
+
+They format staged C# with `dotnet format`, check YAML, JSON and MSBuild XML, validate the GitHub
+workflows, and hold commit messages to Conventional Commits. CI runs the same hooks.
+
+Build output goes to `artifacts/` (the .NET artifacts output layout). Assemblies are strong-named
+with the checked-in `Pledge.snk`, versions come from git tags, and `samples/BankAccount` is published
+with Native AOT in CI as the trim and AOT canary. See [RELEASING.md](RELEASING.md) for how releases
+are cut and what they require.
 
 ## License
 

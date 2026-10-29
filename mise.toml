@@ -1,0 +1,3 @@
+# Toolchain pin for mise users (https://mise.jdx.dev); keep in sync with global.json. Other setups can ignore this file.
+[tools]
+dotnet = "10.0.302"

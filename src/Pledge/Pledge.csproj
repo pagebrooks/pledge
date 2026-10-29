@@ -3,18 +3,20 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsAotCompatible>true</IsAotCompatible>
-    <Description>Design by Contract for .NET: preconditions, postconditions, Old() snapshots and invariants written as ordinary C# and checked by a Roslyn source generator. No IL rewriter, no compiler fork.</Description>
+    <Description>Design by Contract for .NET: preconditions, postconditions, Old() snapshots and invariants written as ordinary C# and checked by a Roslyn source generator. Generator, analyzers and code fixes ship in this package. No IL rewriter, no compiler fork.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../Pledge.Attributes/Pledge.Attributes.csproj" />
-    <!-- Build-order only. The generator ships inside this package under analyzers/dotnet/cs and is never a runtime dependency. -->
-    <ProjectReference Include="../Pledge.Generator/Pledge.Generator.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <!-- Build-order only. The Roslyn components ship inside this package under analyzers/dotnet/cs and are never runtime dependencies. -->
+    <ProjectReference Include="../Pledge.Roslyn/Pledge.Roslyn.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="../Pledge.Roslyn.CodeFixes/Pledge.Roslyn.CodeFixes.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="build/Pledge.props" Pack="true" PackagePath="build/" />
-    <None Include="$(ArtifactsPath)/bin/Pledge.Generator/$(Configuration.ToLowerInvariant())/Pledge.Generator.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
+    <None Include="$(ArtifactsPath)/bin/Pledge.Roslyn/$(Configuration.ToLowerInvariant())/Pledge.Roslyn.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
+    <None Include="$(ArtifactsPath)/bin/Pledge.Roslyn.CodeFixes/$(Configuration.ToLowerInvariant())/Pledge.Roslyn.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
   </ItemGroup>
 
   <ItemGroup>
