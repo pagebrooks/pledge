@@ -246,9 +246,9 @@ The generator emits a declarative view of every contract so consumers in other a
 
 The install experience and the overhead numbers are launch content, not afterthoughts; both get measured and published.
 
-**Install.** One package reference. The package's `build/*.props` appends the generator's namespace to `InterceptorsNamespaces` and sets `LangVersion` guidance; DBC005 catches the cases it can't fix (older SDKs, a project that overrides the property). Target: zero manual steps on .NET 8+ with the .NET 9+ SDK.
+**Install.** One package reference. The package's `build/*.props` appends the generator's namespace to `InterceptorsNamespaces` and sets `LangVersion` guidance; DBC005 catches the cases it can't fix (older SDKs, a project that overrides the property). Target: zero manual steps on .NET 10+ with the .NET 10+ SDK.
 
-**Supported matrix (MVP).** Runtime `net8.0`+ for the attributes/runtime package (`netstandard2.0` for the attributes-only package so libraries can carry metadata without taking a runtime dependency); SDK 9+ for the generator; C# 13+. The interceptor API surface is wrapped behind one internal abstraction so a change to the experimental feature is a one-file fix.
+**Supported matrix (MVP).** Runtime `net10.0`+ for the runtime package (`netstandard2.0` for the attributes-only package so libraries can carry metadata without taking a runtime dependency); SDK 10+ for the generator; C# 14+. .NET 8 leaves support in November 2026 and .NET 9 already has, so a lower floor buys nothing at launch. The interceptor API surface is wrapped behind one internal abstraction so a change to the experimental feature is a one-file fix.
 
 **Performance budget, published with every release:**
 
@@ -279,7 +279,7 @@ The MVP is the smallest thing that proves the authoring experience holds up in r
 | Metadata | `[Requires]`/`[Ensures]` text attributes | XML doc enrichment task | Markdown export CLI |
 | Testing bridge | Registry + CsCheck + xUnit/TUnit, stateless | FsCheck backend, stateful invariant sequences, counterexample snapshots | Coverage report: which contracts the test run exercised |
 | DX | Auto-wired build props, DBC005, `#line` mapping, exception messages with contract text | `dotnet new` template, sample repo, benchmark suite published | Rider/VS tooltips via the metadata attributes |
-| Platforms | net8.0+, SDK 9+, C# 13+, NativeAOT clean | netstandard2.0 attributes-only package | — |
+| Platforms | net10.0+, SDK 10+, C# 14+, NativeAOT clean | netstandard2.0 attributes-only package | — |
 
 **MVP exit criteria.** (1) The bank-account sample runs under `Enforce` with every contract exercised; (2) `Ignore` mode produces byte-identical IL; (3) NativeAOT publish is warning-free; (4) the property-test bridge finds a seeded bug the unit tests miss; (5) three external projects try it and the DBC005 setup diagnostic fires zero times in anger.
 
@@ -328,7 +328,7 @@ Six things no current option offers together; the first three are the headline, 
 - **Runtime proxies.** No Castle DynamicProxy, no reflection-based interception; everything is compile time.
 - **Replacing NRT.** Null contracts are supported but the docs steer users to NRT for nullness and to this package for everything else.
 - **A commercial tier for the core.** If money is ever involved it is tooling or support around the package, never features withheld from it.
-- **Supporting .NET Framework or pre-C# 13 compilers.** The interceptor dependency makes this impractical; the attributes-only package targets `netstandard2.0` so metadata can flow through older libraries.
+- **Supporting .NET Framework, runtimes before .NET 10, or pre-C# 14 compilers.** The interceptor dependency and the support lifecycle make this impractical; the attributes-only package targets `netstandard2.0` so metadata can flow through older libraries.
 
 ## Open questions and naming
 
@@ -342,7 +342,7 @@ Decisions that change the API shape or the pitch and should be settled before th
 - [ ] **Interceptor abstraction boundary.** How much of the interceptor plumbing to hide so decorator mode can share the lifted predicates — settle before writing the generator.
 - [ ] **`Old()` of reference types.** Shallow reference by default with DBC007, or refuse without an explicit copy? Recommendation: allow + warn in MVP; revisit with user feedback.
 - [ ] **Async cancellation semantics.** Skip postconditions on `OperationCanceledException` by default, or treat cancellation as a normal exit?
-- [ ] **Minimum C# version.** 13 (interceptors usable with the namespace property) vs 14. Determines who can adopt at launch.
+- [x] **Minimum C# version.** Decided (Oct 29, 2026): C# 14 on the .NET 10 SDK, runtime floor `net10.0`. .NET 8 leaves support in November 2026 and .NET 9 already has, so 13 would not widen adoption at launch.
 - [ ] **Scope of the attributes-only package.** Exactly which attributes ship in the `netstandard2.0` package so libraries can carry contract metadata without the runtime.
 
 **Names considered** (before publishing, confirm with `dotnet package search Pledge --exact-match`, the GitHub org and the domain):

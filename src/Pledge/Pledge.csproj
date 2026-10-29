@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <IsAotCompatible>true</IsAotCompatible>
     <Description>Design by Contract for .NET: preconditions, postconditions, Old() snapshots and invariants written as ordinary C# and checked by a Roslyn source generator. No IL rewriter, no compiler fork.</Description>
   </PropertyGroup>

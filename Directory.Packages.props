@@ -7,11 +7,11 @@
 
   <ItemGroup Label="Roslyn">
     <!--
-      Pinned to the compiler that ships with the oldest supported SDK (9.0.100), so the generator
+      Pinned to the compiler that ships with the oldest supported SDK (10.0.100), so the generator
       and analyzers load in every SDK the design targets. Bump deliberately, not via Dependabot.
     -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.12.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.0.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" />
   </ItemGroup>
 
