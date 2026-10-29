@@ -3,16 +3,27 @@ name: Release
 on:
   push:
     tags: ['v*']
+  # Dry run: builds, tests, packs, signs and uploads the packages as a workflow artifact,
+  # but does not attest, publish or create a release. Use it to exercise the pipeline
+  # before cutting a version.
+  workflow_dispatch:
 
 permissions:
-  contents: write   # create the GitHub release
-  id-token: write   # NuGet.org trusted publishing (OIDC)
+  contents: write      # create the GitHub release
+  id-token: write      # NuGet.org trusted publishing and attestation signing (OIDC)
+  attestations: write  # publish build provenance attestations
+
+# Releases queue behind each other and are never cancelled.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
 
+# Actions are pinned to commit SHAs; see ci.yml.
 jobs:
   release:
     name: Pack, sign, publish
@@ -23,11 +34,11 @@ jobs:
       NUGET_SIGNING_CERTIFICATE: ${{ secrets.NUGET_SIGNING_CERTIFICATE }}
       NUGET_SIGNING_PASSWORD: ${{ secrets.NUGET_SIGNING_PASSWORD }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
 
       - name: Restore
         run: dotnet restore
@@ -42,10 +53,12 @@ jobs:
         run: dotnet pack --configuration Release --no-build --output artifacts/package
 
       - name: Check that the package version matches the tag
+        if: github.ref_type == 'tag'
         run: |
           version="${GITHUB_REF_NAME#v}"
           test -f "artifacts/package/Pledge.${version}.nupkg" || { echo "::error::Expected Pledge.${version}.nupkg; MinVer produced:"; ls artifacts/package; exit 1; }
 
+      # Signing changes the package bytes, so it happens before anything records their digests.
       - name: Sign packages
         if: env.NUGET_SIGNING_CERTIFICATE != ''
         run: |
@@ -56,14 +69,36 @@ jobs:
             --timestamper http://timestamp.digicert.com
           rm -f "$RUNNER_TEMP/signing.pfx"
 
+      - name: Upload packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: packages
+          path: |
+            artifacts/package/*.nupkg
+            artifacts/package/*.snupkg
+          if-no-files-found: error
+
+      # Signed statement that these exact bytes came out of this workflow at this commit.
+      # Verify a file attached to the GitHub release with:
+      #   gh attestation verify Pledge.<version>.nupkg --repo pagebrooks/pledge
+      - name: Attest build provenance
+        if: github.ref_type == 'tag'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            artifacts/package/*.nupkg
+            artifacts/package/*.snupkg
+
       # Short-lived API key from GitHub's OIDC token; no long-lived NuGet secret exists anywhere.
       - name: Log in to NuGet.org
+        if: github.ref_type == 'tag'
         id: nuget-login
-        uses: NuGet/login@v1
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ vars.NUGET_USER }}
 
       - name: Push to NuGet.org
+        if: github.ref_type == 'tag'
         run: >
           dotnet nuget push "artifacts/package/*.nupkg"
           --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
@@ -71,6 +106,7 @@ jobs:
           --skip-duplicate
 
       - name: Create the GitHub release
+        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

@@ -13,6 +13,7 @@
     <File Path="Pledge.snk" />
     <File Path="README.md" />
     <File Path="RELEASING.md" />
+    <File Path="SECURITY.md" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/BankAccount/BankAccount.csproj" />

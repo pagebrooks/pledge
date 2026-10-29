@@ -11,6 +11,8 @@
     <!-- Explicit so nested Directory.Build.props files (src/, tests/) do not each get their own artifacts/ folder. -->
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+    <!-- Trim and AOT warnings are listed one per site, not collapsed to one per assembly. -->
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <!-- Required in every project for IDE0005 (unnecessary usings) to run at build time: https://github.com/dotnet/roslyn/issues/41640 -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
