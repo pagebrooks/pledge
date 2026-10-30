@@ -68,7 +68,10 @@ the checks are off by default and the assembly is the one you would get without 
 
 ## Next
 
+- [When to use Pledge](use-cases.md): the situations contracts pay off in, and the ones where another tool fits better.
+- [Validation or contracts?](validation-vs-contracts.md): how to tell the two apart and where each one goes.
 - [Writing contracts](contracts.md): every member of `Pledge`, the placement rules and what each contract may say.
 - [Enforcement modes](modes.md): `Ignore`, `Observe`, `Enforce` and `EnforceFailFast`, per build and per kind of contract.
 - [Contracts as property tests](testing.md): `Pledge.Testing` runs the same contracts as property-based tests.
 - [Diagnostics](/rules): what each `PLEDGE` analyzer reports and how to fix it.
+- [Compared with other tools](comparison.md): Pledge next to Metalama, PostSharp, Code Contracts, Fody weavers and guard clauses, including what each one costs.
