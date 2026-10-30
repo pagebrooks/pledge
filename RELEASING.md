@@ -50,12 +50,12 @@ checks. The attestation is taken after signing, so it covers the signed package.
 
 - **NuGet.org trusted publishing.** The workflow authenticates with GitHub's OIDC token through
   `NuGet/login`, so no long-lived API key exists. On nuget.org, add a trusted publishing policy
-  for repository `pagebrooks/pledge`, workflow `release.yml` and environment `release`, then
+  for repository `pagebrooks/pledge`, workflow `release.yml` and environment `production`, then
   set the repository variable `NUGET_USER` to the nuget.org account that owns the policy.
 - **Package signing (optional).** Add the secrets `NUGET_SIGNING_CERTIFICATE` (a base64-encoded
   PFX of a code-signing certificate) and `NUGET_SIGNING_PASSWORD`. When present, packages are
   Authenticode-signed with a timestamp before publishing; when absent, the step is skipped.
-- **Environment `release`.** GitHub creates it on the first run. Add required reviewers there
+- **Environment `production`.** GitHub creates it on the first run. Add required reviewers there
   if publishing should wait for approval.
 - **Pinned actions.** Workflow actions are pinned to commit SHAs with the version in a comment.
   Dependabot updates both; do not replace a SHA with a floating tag.

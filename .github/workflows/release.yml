@@ -28,7 +28,7 @@ jobs:
   release:
     name: Pack, sign, publish
     runs-on: ubuntu-latest
-    environment: release
+    environment: production
     env:
       # Optional. When both are set the packages are Authenticode-signed before publishing; see RELEASING.md.
       NUGET_SIGNING_CERTIFICATE: ${{ secrets.NUGET_SIGNING_CERTIFICATE }}
