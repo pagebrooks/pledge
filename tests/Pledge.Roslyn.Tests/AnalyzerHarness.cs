@@ -13,6 +13,10 @@ internal static class AnalyzerHarness
 {
     private static readonly ImmutableArray<DiagnosticAnalyzer> _analyzers = [new ContractAnalyzer(), new ConstantArgumentAnalyzer(), new UncoveredCallAnalyzer()];
 
+    // The formatter takes line endings from end_of_line and falls back to Environment.NewLine, so without this the
+    // fixes would write CRLF on Windows. A consumer's own .editorconfig plays this part.
+    private static readonly string _snippetDirectory = Path.Combine(Path.GetTempPath(), "PledgeSnippet");
+
     public static Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string source, bool allowCompileErrors = false, params string[] extraSources) =>
         AnalyzeAsync(source, globalOptions: null, allowCompileErrors, extraSources);
 
@@ -48,13 +52,16 @@ internal static class AnalyzerHarness
         var project = workspace.AddProject("Snippet", LanguageNames.CSharp)
             .WithCompilationOptions(GeneratorHarness.CompilationOptions)
             .WithParseOptions(GeneratorHarness.ParseOptions())
-            .WithMetadataReferences(GeneratorHarness.References);
+            .WithMetadataReferences(GeneratorHarness.References)
+            .AddAnalyzerConfigDocument(".editorconfig", Microsoft.CodeAnalysis.Text.SourceText.From("root = true\n\n[*.cs]\nend_of_line = lf\n"), filePath: Path.Combine(_snippetDirectory, ".editorconfig"))
+            .Project;
 
         var sources = new[] { source }.Concat(extraSources).ToArray();
         var documentIds = new List<DocumentId>();
         for (var index = 0; index < sources.Length; index++)
         {
-            var document = project.AddDocument($"Source{index}.cs", sources[index]);
+            var name = $"Source{index}.cs";
+            var document = project.AddDocument(name, sources[index], filePath: Path.Combine(_snippetDirectory, name));
             documentIds.Add(document.Id);
             project = document.Project;
         }
