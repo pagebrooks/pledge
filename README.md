@@ -1,5 +1,8 @@
 # Pledge
 
+[![CI](https://github.com/pagebrooks/pledge/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pagebrooks/pledge/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/vpre/Pledge?label=NuGet)](https://www.nuget.org/packages/Pledge)
+
 Design by Contract for modern .NET: no IL rewriter, no compiler fork, no Visual Studio extension.
 
 Pledge gives C# real postconditions and `Old()` snapshots, with invariants and contract inheritance
@@ -9,8 +12,8 @@ them out at build time and checks them through interceptors. Contract violations
 blame attached (caller or callee), not validation failures, so FluentValidation and guard
 clauses keep their jobs.
 
-> **Status: alpha.** [`0.1.0-alpha.1`](https://www.nuget.org/packages/Pledge) is on NuGet, and the
-> API can still change between pre-releases. The snippet below works today: `Requires`, `Ensures` with `Result<T>()`
+> **Status: alpha.** Pre-releases are on [NuGet](https://www.nuget.org/packages/Pledge), and the
+> API can still change between them. The snippet below works today: `Requires`, `Ensures` with `Result<T>()`
 > and `Old()`, and `EnsuresOnThrow` on sync and async methods, checked through the source
 > generator and interceptors, with the enforcement modes, blame with file and line, assembly
 > metadata and a Native AOT sample. Analyzers PLEDGE001-PLEDGE009 with code fixes catch misplaced

@@ -1,6 +1,6 @@
 ---
 title: Compared with other tools
-description: How Pledge compares with Metalama, PostSharp, Code Contracts, Fody weavers, guard clause libraries and the BCL, including what each one costs.
+description: How Pledge compares with Metalama, PostSharp, Code Contracts and nullable reference types, including what each one costs.
 ---
 
 # Compared with other tools
@@ -37,25 +37,29 @@ This page reflects each tool as of October 30, 2026. If something here is out of
 
 ## Capabilities
 
-| | Pledge | Metalama and PostSharp contracts | Code Contracts | NullGuard.Fody | Guard clause libraries | Nullable reference types and BCL helpers |
-| --- | --- | --- | --- | --- | --- | --- |
-| Preconditions | Any boolean expression | Attributes from a fixed vocabulary (`[NotNull]`, `[Range]`, `[Regex]`…) or custom attribute classes | Any boolean expression | Null checks only | Any check, written as a call | Null checks: compile-time warnings, plus `ThrowIfNull` and similar helpers |
-| Postconditions | Any boolean expression over the result, the arguments and the object's state | Attributes on return values and `out` parameters | Any boolean expression | Null checks on return values and `out` parameters | Only as code you write at the end of the method | Annotations such as `[return: NotNull]`, checked at compile time only |
-| `Old()` snapshots | Yes | No | Yes (`Contract.OldValue`) | No | No | No |
-| Postconditions when the method throws | Yes (`EnsuresOnThrow`) | No | Yes (`EnsuresOnThrow`) | No | No | No |
-| Object invariants | Planned for v1.0 | Yes (`[Invariant]` methods) | Yes | No | No | No |
-| Contract inheritance | Planned for v1.0 | Yes: an interface's contracts apply to its implementations | Yes | — | No | Annotations are checked on overrides |
-| Contracts as property-based tests | Yes | No | No | No | No | No |
-| How it works | Source generator and interceptors in the standard compiler | Metalama: aspects applied by its own build of the Roslyn compiler. PostSharp: rewrites the IL after compilation | Rewrites the IL after compilation (`ccrewrite`), plus a separate static checker | Fody rewrites the IL after compilation | Ordinary method calls | The compiler and the base class library |
-| Setup | One package | The package, which brings its compiler or weaver | Installer and Visual Studio extension | Fody, the weaver package and `FodyWeavers.xml` | One package | Built in |
-| Status | Alpha | Maintained | Archived in 2018; never supported .NET Core | Maintained | Maintained | Part of .NET |
-| Licence | MIT | See [licensing](#licensing) | MIT | MIT | MIT | MIT |
+| | Pledge | Metalama and PostSharp contracts | Code Contracts | Nullable reference types and BCL helpers |
+| --- | --- | --- | --- | --- |
+| Preconditions | Any boolean expression | Attributes from a fixed vocabulary (`[NotNull]`, `[Range]`, `[Regex]`…) or custom attribute classes | Any boolean expression | Null checks: compile-time warnings, plus `ThrowIfNull` and similar helpers |
+| Postconditions | Any boolean expression over the result, the arguments and the object's state | Attributes on return values and `out` parameters | Any boolean expression | Annotations such as `[return: NotNull]`, checked at compile time only |
+| `Old()` snapshots | Yes | No | Yes (`Contract.OldValue`) | No |
+| Postconditions when the method throws | Yes (`EnsuresOnThrow`) | No | Yes (`EnsuresOnThrow`) | No |
+| Object invariants | Planned for v1.0 | Yes (`[Invariant]` methods) | Yes | No |
+| Contract inheritance | Planned for v1.0 | Yes: an interface's contracts apply to its implementations | Yes | Annotations are checked on overrides |
+| Contracts as property-based tests | Yes | No | No | No |
+| How it works | Source generator and interceptors in the standard compiler | Metalama: aspects applied by its own build of the Roslyn compiler. PostSharp: rewrites the IL after compilation | Rewrites the IL after compilation (`ccrewrite`), plus a separate static checker | The compiler and the base class library |
+| Setup | One package | The package, which brings its compiler or weaver | Installer and Visual Studio extension | Built in |
+| Status | Alpha | Maintained | Archived in 2018; never supported .NET Core | Part of .NET |
+| Licence | MIT | See [licensing](#licensing) | MIT | MIT |
 
 Metalama is PostSharp's successor, and both write contracts as attributes. They share a column because their
 contracts can say the same kinds of thing; they differ in how they get into your build and in their licences.
 
-Two more tools are related but do a different job:
+A few more tools are related but do a different job:
 
+- **Null-check weavers** such as NullGuard.Fody add null checks to compiled code. Nullable reference types now
+  cover most of that at compile time.
+- **Guard clause libraries** such as Ardalis.GuardClauses and CommunityToolkit.Diagnostics make hand-written
+  argument checks shorter. They cover preconditions only, as code inside the method body.
 - **JetBrains `[ContractAnnotation]`** describes input-to-output rules such as `"null => halt"` for ReSharper
   and Rider to check while you edit. Nothing is checked when the program runs.
 - **[Dafny](https://dafny.org)** is a language that proves its contracts before compiling to C#, among other
@@ -72,10 +76,7 @@ free part.
 | [Metalama](https://www.postsharp.net/metalama/pricing) | MIT for the open-source packages, including `Metalama.Patterns.Contracts`. Its pricing page notes that only the latest release line stays under MIT. | The Visual Studio tooling is free in the Community edition for individuals, companies of up to three users and non-commercial use. Larger commercial teams need the paid Professional or Enterprise edition, which also adds toolkits. |
 | [PostSharp](https://www.postsharp.net/il/essentials) | Commercial licence agreement | Contracts are free without limit in the free Essentials edition. Most other premium features are limited to 1,000 lines of code without a paid licence. |
 | Code Contracts | MIT | Nothing, but it only ever ran on .NET Framework and is no longer maintained. |
-| NullGuard.Fody and other Fody weavers | MIT | Nothing the licence requires. Fody's maintainers [expect every developer who uses it](https://github.com/Fody/Home/blob/master/pages/licensing-patron-faq.md) to become a patron on Open Collective, and may not triage issues from developers who are not. |
-| Ardalis.GuardClauses, CommunityToolkit.Diagnostics, Throw, Dawn.Guard | MIT | Nothing. |
 | JetBrains.Annotations | MIT | The checks run in ReSharper or Rider, which are free for non-commercial use and paid for commercial use. |
-| CsCheck, FsCheck | Apache 2.0, BSD 3-Clause | Nothing. |
 | Dafny | MIT | Nothing. |
 
 The licences are the ones each package's latest release declares on nuget.org. The pricing details come

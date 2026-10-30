@@ -74,4 +74,4 @@ the checks are off by default and the assembly is the one you would get without 
 - [Enforcement modes](modes.md): `Ignore`, `Observe`, `Enforce` and `EnforceFailFast`, per build and per kind of contract.
 - [Contracts as property tests](testing.md): `Pledge.Testing` runs the same contracts as property-based tests.
 - [Diagnostics](/rules): what each `PLEDGE` analyzer reports and how to fix it.
-- [Compared with other tools](comparison.md): Pledge next to Metalama, PostSharp, Code Contracts, Fody weavers and guard clauses, including what each one costs.
+- [Compared with other tools](comparison.md): Pledge next to Metalama, PostSharp and Code Contracts, including what each one costs.
