@@ -27,4 +27,4 @@ for that test.
 Pledge is MIT-licensed and built in the open. If it saves you a bug or two, consider
 [sponsoring its development](https://github.com/sponsors/pagebrooks).
 
-[Source and docs](https://github.com/pagebrooks/pledge) · [Design](https://github.com/pagebrooks/pledge/blob/main/DESIGN.md) · [Issues](https://github.com/pagebrooks/pledge/issues) · [License](https://github.com/pagebrooks/pledge/blob/main/LICENSE)
+[Documentation](https://pledge.pagebrooks.com) · [Source](https://github.com/pagebrooks/pledge) · [Design](https://github.com/pagebrooks/pledge/blob/main/DESIGN.md) · [Issues](https://github.com/pagebrooks/pledge/issues) · [License](https://github.com/pagebrooks/pledge/blob/main/LICENSE)

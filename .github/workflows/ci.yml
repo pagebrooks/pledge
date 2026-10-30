@@ -80,6 +80,28 @@ jobs:
             artifacts/package/*.nupkg
             artifacts/package/*.snupkg
 
+  # Builds the docs site on every change so a broken link fails here, not at release time. Deploying is docs.yml's job.
+  docs:
+    name: Docs site
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
   aot:
     name: Native AOT publish (${{ matrix.rid }})
     runs-on: ${{ matrix.os }}

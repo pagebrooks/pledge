@@ -17,7 +17,8 @@ clauses keep their jobs.
 > contracts, misused `Result`/`Old`, impure expressions, mutable `Old` snapshots, constant arguments
 > that break a precondition, and calls the contracts do not reach. The testing bridge turns the same contracts into property-based tests
 > with CsCheck, through xUnit or TUnit.
-> The full design and semantics are in [DESIGN.md](DESIGN.md).
+> Documentation is at [pledge.pagebrooks.com](https://pledge.pagebrooks.com); the full design and
+> semantics are in [DESIGN.md](DESIGN.md).
 
 ```sh
 dotnet add package Pledge --prerelease
@@ -112,6 +113,8 @@ so a project tested in Release sets `<PledgeRegistry>true</PledgeRegistry>`.
 | `docs/rules` | | One page per PLEDGE diagnostic, linked from the diagnostics themselves. |
 | `tests/` | | Test projects, one per area, on xUnit v3 except the TUnit adapter's. `Pledge.Integration.Tests` consumes the generator the way a package consumer does; `Pledge.Build.Tests` builds throwaway projects with the real SDK to check the mode properties, each mode's behaviour, the byte-identical `Ignore` output and the packed package consumed through a `PackageReference`. `Pledge.Testing.Tests` holds the seeded bug the unit tests miss and the property tests find; `Pledge.Testing.TUnit.Tests` runs under TUnit. |
 | `samples/BankAccount` | | The bank-account domain under contracts. |
+| `benchmarks/` | | BenchmarkDotNet suites for the performance budget: contract checks against hand-written ones, and the generator on a 1,000-method project. |
+| `website/` | | The documentation site at [pledge.pagebrooks.com](https://pledge.pagebrooks.com), built with Docusaurus. It also renders `docs/rules`. |
 
 ## Building
 

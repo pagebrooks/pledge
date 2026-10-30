@@ -17,6 +17,7 @@ public sealed class PledgeGenerator : IIncrementalGenerator
         public const string CallSites = "CallSites";
         public const string Misplaced = "Misplaced";
         public const string Probes = "Probes";
+        public const string Wrappers = "Wrappers";
     }
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -31,7 +32,7 @@ public sealed class PledgeGenerator : IIncrementalGenerator
 
         var callSites = context.SyntaxProvider
             .CreateSyntaxProvider(
-                static (node, _) => node is InvocationExpressionSyntax,
+                static (node, _) => node is InvocationExpressionSyntax invocation && !ContractSyntax.IsPledgeCall(invocation),
                 static (syntaxContext, cancellationToken) => CallSiteParser.Parse((InvocationExpressionSyntax)syntaxContext.Node, syntaxContext.SemanticModel, cancellationToken))
             .Where(static site => site is not null)
             .Select(static (site, _) => site!.Value)
@@ -69,9 +70,21 @@ public sealed class PledgeGenerator : IIncrementalGenerator
         var collected = methods.Collect();
         context.RegisterSourceOutput(collected.Combine(options), static (productionContext, input) => EmitMetadata(productionContext, input.Left, input.Right.Metadata));
 
-        var input = collected.Combine(callSites.Collect()).Combine(options.Combine(interceptorsEnabled));
-        context.RegisterSourceOutput(input, static (productionContext, input) =>
-            EmitWrappers(productionContext, input.Left.Left, input.Left.Right, input.Right.Left.Modes, input.Right.Right));
+        var settings = options.Select(static (options, _) => options.Modes).Combine(interceptorsEnabled);
+        context.RegisterSourceOutput(collected.Combine(settings), static (productionContext, input) =>
+            ReportInactive(productionContext, input.Left, input.Right.Left, input.Right.Right));
+
+        // Wrappers are per method too: each one is paired with its own call sites, so an edit regenerates only the
+        // wrappers whose method or call sites changed. Handing every method and site to one output instead made each
+        // keystroke re-emit, and the driver re-parse, every wrapper in the project.
+        var sitesByMethod = callSites.Collect().Select(static (sites, _) => GroupByMethod(sites));
+        var wrappers = methods
+            .Combine(sitesByMethod)
+            .Select(static (input, _) => (Method: input.Left, Sites: input.Right.TryGetValue(input.Left.Key, out var sites) ? sites : EquatableArray<CallSite>.Empty))
+            .Combine(settings)
+            .WithTrackingName(TrackingNames.Wrappers);
+        context.RegisterSourceOutput(wrappers, static (productionContext, input) =>
+            EmitWrapper(productionContext, input.Left.Method, input.Left.Sites, input.Right.Left, input.Right.Right));
     }
 
     private static string? Option(AnalyzerConfigOptionsProvider provider, string key) =>
@@ -116,47 +129,50 @@ public sealed class PledgeGenerator : IIncrementalGenerator
         }
     }
 
-    private static void EmitWrappers(
-        SourceProductionContext context,
-        ImmutableArray<ContractedMethod> methods,
-        ImmutableArray<CallSite> callSites,
-        ModeSettings modes,
-        bool interceptorsEnabled)
-    {
-        // Only what the modes leave enabled is generated; a method whose every contract kind is ignored is not
-        // checked anywhere, so it gets neither a wrapper nor PLEDGE006.
-        var enabled = methods
-            .Where(static method => method.IsGenerable)
-            .Select(method => method.Enabled(modes))
-            .OfType<ContractedMethod>()
-            .ToList();
-
-        if (enabled.Count == 0)
-        {
-            return;
-        }
-
-        if (!interceptorsEnabled)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.GeneratorNotActive, enabled[0].Site.ToLocation(), WrapperEmitter.Namespace));
-            return;
-        }
-
-        var sitesByMethod = callSites
+    private static ImmutableDictionary<string, EquatableArray<CallSite>> GroupByMethod(ImmutableArray<CallSite> sites) =>
+        sites
             .GroupBy(site => site.MethodKey, StringComparer.Ordinal)
-            .ToDictionary(group => group.Key, group => (IReadOnlyList<CallSite>)group.OrderBy(site => site.FilePath, StringComparer.Ordinal).ThenBy(site => site.Line).ToList(), StringComparer.Ordinal);
+            .ToImmutableDictionary(
+                group => group.Key,
+                group => group.OrderBy(site => site.FilePath, StringComparer.Ordinal).ThenBy(site => site.Line).ToEquatableArray(),
+                StringComparer.Ordinal);
 
-        foreach (var method in enabled.OrderBy(method => method.HintName, StringComparer.Ordinal))
+    // Only what the modes leave enabled is generated; a method whose every contract kind is ignored is not checked
+    // anywhere, so it gets neither a wrapper nor PLEDGE005 or PLEDGE006.
+    private static ContractedMethod? Enabled(ContractedMethod method, ModeSettings modes) =>
+        method.IsGenerable ? method.Enabled(modes) : null;
+
+    // PLEDGE005 once per project, at the first method that would have had checks.
+    private static void ReportInactive(SourceProductionContext context, ImmutableArray<ContractedMethod> methods, ModeSettings modes, bool interceptorsEnabled)
+    {
+        if (interceptorsEnabled)
         {
-            context.CancellationToken.ThrowIfCancellationRequested();
-
-            if (!sitesByMethod.TryGetValue(method.Key, out var sites))
-            {
-                context.ReportDiagnostic(Diagnostic.Create(Diagnostics.NoCallSites, method.Site.ToLocation(), method.MethodName));
-                continue;
-            }
-
-            context.AddSource(method.HintName, WrapperEmitter.Emit(method, sites, modes));
+            return;
         }
+
+        foreach (var method in methods)
+        {
+            if (Enabled(method, modes) is not null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Diagnostics.GeneratorNotActive, method.Site.ToLocation(), WrapperEmitter.Namespace));
+                return;
+            }
+        }
+    }
+
+    private static void EmitWrapper(SourceProductionContext context, ContractedMethod method, EquatableArray<CallSite> sites, ModeSettings modes, bool interceptorsEnabled)
+    {
+        if (!interceptorsEnabled || Enabled(method, modes) is not { } enabled)
+        {
+            return;
+        }
+
+        if (sites.Count == 0)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.NoCallSites, method.Site.ToLocation(), method.MethodName));
+            return;
+        }
+
+        context.AddSource(method.HintName, WrapperEmitter.Emit(enabled, sites, modes));
     }
 }

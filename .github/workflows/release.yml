@@ -114,3 +114,14 @@ jobs:
           case "$GITHUB_REF_NAME" in *-*) prerelease="--prerelease" ;; esac
           gh release create "$GITHUB_REF_NAME" artifacts/package/*.nupkg artifacts/package/*.snupkg \
             --title "$GITHUB_REF_NAME" --generate-notes $prerelease
+
+  # The site follows the packages: it is rebuilt and deployed from the tagged commit once they are published.
+  docs:
+    name: Publish the docs
+    needs: release
+    if: github.ref_type == 'tag'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/docs.yml

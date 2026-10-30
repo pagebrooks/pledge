@@ -11,6 +11,13 @@ internal static class ContractSyntax
     public static bool IsContractInvocation(SyntaxNode node) =>
         node is InvocationExpressionSyntax invocation && IsContractName(NameOf(invocation.Expression));
 
+    // A call written Pledge.Requires(...), Pledge.Old(...) and so on. These are never call sites of a contracted
+    // method, and a contracted method carries several of them, so the call-site pipeline skips them before binding.
+    public static bool IsPledgeCall(InvocationExpressionSyntax invocation) =>
+        invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: var name, Expression: var target }
+        && name is "Requires" or "Ensures" or "EnsuresOnThrow" or "Old" or "Result"
+        && target is IdentifierNameSyntax { Identifier.ValueText: "Pledge" } or MemberAccessExpressionSyntax { Name.Identifier.ValueText: "Pledge" };
+
     public static bool IsCandidateDeclaration(SyntaxNode node) =>
         node is MethodDeclarationSyntax { Body.Statements: { Count: > 0 } statements } && IsContractCall(statements[0], out _);
 

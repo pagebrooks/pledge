@@ -1,0 +1,21 @@
+/* Docusaurus's Infima theme with the primary color changed; everything else is the default. */
+:root {
+  --ifm-color-primary: #2e6b5e;
+  --ifm-color-primary-dark: #295f54;
+  --ifm-color-primary-darker: #275a4f;
+  --ifm-color-primary-darkest: #204a41;
+  --ifm-color-primary-light: #337768;
+  --ifm-color-primary-lighter: #357c6d;
+  --ifm-color-primary-lightest: #3c8c7b;
+  --ifm-code-font-size: 95%;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #5fbfa8;
+  --ifm-color-primary-dark: #4db59c;
+  --ifm-color-primary-darker: #47ab93;
+  --ifm-color-primary-darkest: #3a8d79;
+  --ifm-color-primary-light: #71c7b4;
+  --ifm-color-primary-lighter: #7bcbb9;
+  --ifm-color-primary-lightest: #97d7c9;
+}

@@ -44,6 +44,7 @@ public decimal Withdraw(decimal amount)
     return Balance;
 }
 
+// v1.0: object invariants
 [Invariant]
 private void BalanceNeverNegative() => Pledge.Invariant(Balance >= 0);
 ```
@@ -151,7 +152,7 @@ namespace PledgeContracts.Generated
 
 **Violation handler.** `PledgeRuntime.ViolationHandler` is a static delegate receiving a `PledgeViolation` record (kind, expression text, member, blame, caller file/line from `[CallerFilePath]`/`[CallerLineNumber]` captured at generation time). Default in `Enforce` throws; teams wire it to logging in `Observe`. This is the C++26 `handle_contract_violation` idea and it is what makes `Observe` useful for rolling contracts into an existing codebase without breaking it.
 
-**Exceptions.** `BrokenPledgeException` (abstract base) with `PreconditionViolationException`, `PostconditionViolationException` and `InvariantViolationException`. Preconditions can optionally map to `ArgumentException` subtypes for public API surfaces via `Pledge.Requires<TException>(...)`, which is the compromise the csharplang thread settled on after the fail-fast debate.
+**Exceptions.** `BrokenPledgeException` (abstract base) with `PreconditionViolationException`, `PostconditionViolationException` and `InvariantViolationException`. In v1.0, preconditions will optionally map to `ArgumentException` subtypes for public API surfaces via `Pledge.Requires<TException>(...)`, the compromise the csharplang thread settled on after the fail-fast debate; until then every broken precondition throws `PreconditionViolationException`.
 
 ## Semantics
 
@@ -179,7 +180,7 @@ The rules below are the ones Code Contracts documented and C++26 debated; gettin
 | Implementation of an interface member | Inherits the interface's `[PledgeFor]` set; may not add | Interface's AND implementation's | — |
 | Explicit weakening (rare) | `Requires` in the override with `[Weakens]` is allowed and OR-ed with the base | — | — |
 
-**Generics and value types.** Contracts on generic methods are lifted per instantiation site; `Old` of a struct copies it (true snapshot). Nullable value types compare with the usual `==` semantics.
+**Generics and value types.** Contracts on generic methods are lifted per instantiation site (v1.0; until then they are PLEDGE009); `Old` of a struct copies it (true snapshot). Nullable value types compare with the usual `==` semantics.
 
 **Re-entrancy and recursion.** Checks run on every call including recursive ones. Invariants are suspended while a public method of the same instance is already on the stack (Code Contracts' rule), to avoid checking half-updated state.
 
@@ -270,7 +271,7 @@ The install experience and the overhead numbers are launch content, not aftertho
 
 **Supported matrix (MVP).** Runtime `net10.0`+ for the runtime package (`netstandard2.0` for the attributes-only package so libraries can carry metadata without taking a runtime dependency); SDK 10+ for the generator; C# 14+. .NET 8 leaves support in November 2026 and .NET 9 already has, so a lower floor buys nothing at launch. The interceptor API surface is wrapped behind one internal abstraction so a change to the experimental feature is a one-file fix.
 
-**Performance budget, published with every release:**
+**Performance budget.** `benchmarks/` measures each row with BenchmarkDotNet; the latest results, including the rows not met yet, are on the docs site's Performance page.
 
 | Scenario | Target |
 | --- | --- |
@@ -283,4 +284,4 @@ The install experience and the overhead numbers are launch content, not aftertho
 
 **Debuggability.** Generated wrappers carry `#line` directives pointing violations at the contract's source line, and `[DebuggerStepThrough]` on the plumbing (the interceptor stubs, the checked body, its async continuation and the testing probes) so F11 lands in the user's method, not the shadow. Exception messages show the contract text, the member, and for preconditions the caller's file:line.
 
-**Templates and samples.** A `dotnet new` item template for a contracted service, a sample repo with a bank-account domain under contracts + the property-test bridge + a NativeAOT publish, and a BenchmarkDotNet project that produces the table above.
+**Templates and samples.** A `dotnet new` item template for a contracted service, a sample repo with a bank-account domain under contracts + the property-test bridge + a NativeAOT publish, and a BenchmarkDotNet project that produces the table above (`benchmarks/`, Oct 30, 2026).

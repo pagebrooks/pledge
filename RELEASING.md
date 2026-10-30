@@ -23,6 +23,8 @@ the next patch with an `-alpha.0.<commits-since-tag>` suffix, starting at `0.1.0
    signs the packages if a certificate is configured, attests their provenance, pushes them to
    NuGet.org and creates a GitHub release with the packages attached and generated notes. Tags
    with a pre-release suffix are marked as pre-releases.
+5. Once the release is out, the same run builds the docs site from the tagged commit and deploys
+   it to https://pledge.pagebrooks.com, so the site always describes the published packages.
 
 ## Dry run
 
@@ -30,6 +32,22 @@ Run the Release workflow by hand from the Actions tab on any branch. It builds, 
 signs exactly as a tagged run does and uploads the packages as a workflow artifact, but it does
 not attest, publish or create a release. Use it to exercise the pipeline before the first tag and
 after any change to it.
+
+## Docs site
+
+The site in `website/` is a [Docusaurus](https://docusaurus.io) project. It renders the pages in
+`website/docs` and, under `/rules`, the diagnostic pages in `docs/rules` that the analyzers link to.
+CI builds it on every push and pull request, and a broken link fails the build. The Docs workflow
+(`docs.yml`) deploys it to GitHub Pages; the Release workflow calls it after each tagged release,
+and it can be run by hand from the Actions tab to publish a docs fix between releases.
+
+Preview locally with Node 24:
+
+```sh
+cd website
+npm ci
+npm start
+```
 
 ## Provenance
 
@@ -57,6 +75,20 @@ checks. The attestation is taken after signing, so it covers the signed package.
   Authenticode-signed with a timestamp before publishing; when absent, the step is skipped.
 - **Environment `production`.** GitHub creates it on the first run. Add required reviewers there
   if publishing should wait for approval.
+- **GitHub Pages.** Set the Pages source to GitHub Actions, give it the custom domain
+  `pledge.pagebrooks.com` and add a DNS `CNAME` record from `pledge.pagebrooks.com` to
+  `pagebrooks.github.io`. Pages creates a `github-pages` environment that only accepts deployments
+  from the default branch; add a tag rule for `v*` there, or the release-time deployment is
+  rejected:
+
+  ```sh
+  gh api -X POST repos/pagebrooks/pledge/pages -f build_type=workflow
+  gh api -X PUT repos/pagebrooks/pledge/pages -f cname=pledge.pagebrooks.com
+  gh api -X POST repos/pagebrooks/pledge/environments/github-pages/deployment-branch-policies -f name='v*' -f type=tag
+  ```
+
+  Once GitHub has issued the certificate for the domain, turn on **Enforce HTTPS** in the Pages
+  settings.
 - **Pinned actions.** Workflow actions are pinned to commit SHAs with the version in a comment.
   Dependabot updates both; do not replace a SHA with a floating tag.
 

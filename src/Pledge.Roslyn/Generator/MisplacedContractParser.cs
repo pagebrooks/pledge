@@ -5,17 +5,12 @@ namespace PledgeContracts.Roslyn.Generator;
 
 // Pledge calls compile away wherever they are, so one placed where the generator cannot act on it would vanish
 // silently. This names those places. Calls inside an ordinary block-bodied method are left to the method pipeline
-// and the placement analyzer.
+// and the placement analyzer. The place is checked from syntax before the call is bound: the generator re-runs this
+// for every Pledge call in the project on each edit, and nearly all of them sit in ordinary methods.
 internal static class MisplacedContractParser
 {
     public static MisplacedContract? Parse(InvocationExpressionSyntax invocation, SemanticModel model, CancellationToken cancellationToken)
     {
-        if (model.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol method
-            || method.ContainingType.ToDisplayString() != ContractParser.PledgeTypeName)
-        {
-            return null;
-        }
-
         foreach (var ancestor in invocation.Ancestors())
         {
             var problem = ancestor switch
@@ -37,7 +32,9 @@ internal static class MisplacedContractParser
                 continue;
             }
 
-            if (problem is null)
+            if (problem is null
+                || model.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol method
+                || method.ContainingType.ToDisplayString() != ContractParser.PledgeTypeName)
             {
                 return null;
             }

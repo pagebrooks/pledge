@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The runtime rows of the performance budget: each contracted method against the hand-written check it replaces.
+    Wired like a package consumer, with the checks on in Release, since benchmarks only mean anything optimized.
+  -->
+  <Import Project="../../src/Pledge/build/Pledge.props" />
+
+  <PropertyGroup>
+    <PledgeMode>Enforce</PledgeMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Pledge/Pledge.csproj" />
+    <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <Import Project="../../src/Pledge/build/Pledge.targets" />
+
+</Project>

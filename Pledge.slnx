@@ -15,6 +15,10 @@
     <File Path="RELEASING.md" />
     <File Path="SECURITY.md" />
   </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Pledge.Benchmarks/Pledge.Benchmarks.csproj" />
+    <Project Path="benchmarks/Pledge.Roslyn.Benchmarks/Pledge.Roslyn.Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/BankAccount/BankAccount.csproj" />
   </Folder>

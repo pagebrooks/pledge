@@ -379,6 +379,27 @@ public sealed class RequiresGenerationTests
         second.AssertCompiles();
     }
 
+    // A wrapper is regenerated only when its own method or call sites change, not on every edit to the project.
+    [Fact]
+    public void Wrappers_are_cached_when_an_unrelated_file_changes()
+    {
+        var first = GeneratorHarness.Run(Account + """
+
+            public static class Scenario
+            {
+                public static object Run() => new Bank.Account(10m).Withdraw(50m);
+            }
+            """);
+
+        var second = first.Rerun("public static class Unrelated { public static int One() => 1; }");
+
+        var steps = second.Result.Results.Single().TrackedSteps[PledgeGenerator.TrackingNames.Wrappers];
+        var reasons = steps.SelectMany(step => step.Outputs).Select(output => output.Reason).ToList();
+        Assert.Single(reasons);
+        Assert.All(reasons, reason => Assert.True(reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged, reason.ToString()));
+        Assert.Single(second.Wrappers);
+    }
+
     private static int LineOf(string source, string needle)
     {
         var lines = source.Split('\n');

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The build-time row of the performance budget: the generator over a 1,000-method project, cold and after an edit. -->
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Pledge/Pledge.csproj" />
+    <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" />
+    <!-- The compiler the generator is built against; BenchmarkDotNet would otherwise bring an older one. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+
+</Project>
