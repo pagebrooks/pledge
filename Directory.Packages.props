@@ -30,6 +30,8 @@
     <PackageVersion Include="xunit.v3" Version="4.0.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <!-- The TUnit adapter's tests run under TUnit itself; kept on the same version as TUnit.Core above. -->
+    <PackageVersion Include="TUnit" Version="1.76.45" />
     <!-- ILSpy's engine: disassembles fixture assemblies so a failed IL comparison shows the differing methods. -->
     <PackageVersion Include="ICSharpCode.Decompiler" Version="11.2.0.10050" />
   </ItemGroup>

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="../../src/Pledge/build/Pledge.props" />
+
+  <PropertyGroup>
+    <PledgeTestFramework>TUnit</PledgeTestFramework>
+    <!-- Explicit, because CI builds Release, where the default is Ignore and no probes would be registered. -->
+    <PledgeMode>Enforce</PledgeMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <ProjectReference Include="../../src/Pledge/Pledge.csproj" />
+    <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../../src/Pledge.Testing/Pledge.Testing.csproj" />
+    <ProjectReference Include="../../src/Pledge.Testing.TUnit/Pledge.Testing.TUnit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The same contracted domain the xUnit tests use, compiled (and probed) again in this assembly. -->
+    <Compile Include="../Pledge.Testing.Tests/Domain/*.cs" Link="Domain/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <Import Project="../../src/Pledge/build/Pledge.targets" />
+
+</Project>

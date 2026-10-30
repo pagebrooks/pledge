@@ -1,1 +1,38 @@
 #nullable enable
+override PledgeContracts.Testing.PledgeCounterexample.ToString() -> string!
+PledgeContracts.Testing.PledgeCounterexample
+PledgeContracts.Testing.PledgeCounterexample.Arguments.get -> System.Collections.Generic.IReadOnlyList<System.Collections.Generic.KeyValuePair<string!, string!>>!
+PledgeContracts.Testing.PledgeCounterexample.Member.get -> PledgeContracts.PledgedMember!
+PledgeContracts.Testing.PledgeCounterexample.Outcome.get -> PledgeContracts.PledgeOutcome!
+PledgeContracts.Testing.PledgeCounterexample.Receiver.get -> string?
+PledgeContracts.Testing.PledgeCounterexample.Seed.get -> string?
+PledgeContracts.Testing.PledgeCounterexample.Summary.get -> string?
+PledgeContracts.Testing.PledgeProperties
+PledgeContracts.Testing.PledgePropertyException
+PledgeContracts.Testing.PledgePropertyException.Counterexample.get -> PledgeContracts.Testing.PledgeCounterexample?
+PledgeContracts.Testing.PledgePropertyException.PledgePropertyException() -> void
+PledgeContracts.Testing.PledgePropertyException.PledgePropertyException(string! message) -> void
+PledgeContracts.Testing.PledgePropertyException.PledgePropertyException(string! message, System.Exception! innerException) -> void
+PledgeContracts.Testing.PledgePropertyOptions
+PledgeContracts.Testing.PledgePropertyOptions.AllowUndeclaredExceptions.get -> bool
+PledgeContracts.Testing.PledgePropertyOptions.AllowUndeclaredExceptions.set -> void
+PledgeContracts.Testing.PledgePropertyOptions.Iterations.get -> int
+PledgeContracts.Testing.PledgePropertyOptions.Iterations.set -> void
+PledgeContracts.Testing.PledgePropertyOptions.Output.get -> System.Action<string!>?
+PledgeContracts.Testing.PledgePropertyOptions.Output.set -> void
+PledgeContracts.Testing.PledgePropertyOptions.PledgePropertyOptions() -> void
+PledgeContracts.Testing.PledgePropertyOptions.Seed.get -> string?
+PledgeContracts.Testing.PledgePropertyOptions.Seed.set -> void
+PledgeContracts.Testing.PledgePropertyOptions.Threads.get -> int
+PledgeContracts.Testing.PledgePropertyOptions.Threads.set -> void
+PledgeContracts.Testing.PledgePropertyOptions.Use<T>(CsCheck.Gen<T>! generator) -> PledgeContracts.Testing.PledgePropertyOptions!
+static PledgeContracts.Testing.PledgeProperties.Check<T>(int iterations = 100, string? seed = null) -> void
+static PledgeContracts.Testing.PledgeProperties.Check<T>(PledgeContracts.Testing.PledgePropertyOptions! options) -> void
+static PledgeContracts.Testing.PledgeProperties.CheckAsync(PledgeContracts.PledgedMember! member) -> System.Threading.Tasks.Task!
+static PledgeContracts.Testing.PledgeProperties.CheckAsync(PledgeContracts.PledgedMember! member, PledgeContracts.Testing.PledgePropertyOptions? options) -> System.Threading.Tasks.Task!
+static PledgeContracts.Testing.PledgeProperties.CheckAsync(System.Type! type) -> System.Threading.Tasks.Task!
+static PledgeContracts.Testing.PledgeProperties.CheckAsync(System.Type! type, PledgeContracts.Testing.PledgePropertyOptions? options) -> System.Threading.Tasks.Task!
+static PledgeContracts.Testing.PledgeProperties.CheckAsync<T>() -> System.Threading.Tasks.Task!
+static PledgeContracts.Testing.PledgeProperties.CheckAsync<T>(PledgeContracts.Testing.PledgePropertyOptions? options) -> System.Threading.Tasks.Task!
+static PledgeContracts.Testing.PledgeProperties.Members(System.Type! type) -> System.Collections.Generic.IReadOnlyList<PledgeContracts.PledgedMember!>!
+static PledgeContracts.Testing.PledgeProperties.Members<T>() -> System.Collections.Generic.IReadOnlyList<PledgeContracts.PledgedMember!>!

@@ -105,14 +105,47 @@ internal static class ContractParser
             ReturnType: method.ReturnType.ToDisplayString(DisplayFormats.Type),
             AsyncKind: asyncKind,
             ResultType: resultType?.ToDisplayString(DisplayFormats.Type),
+            ResultTypeOf: resultType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             OnThrowCoversCancellation: onThrowCoversCancellation,
-            Parameters: method.Parameters.Select(p => new ParameterModel(p.Name, p.Type.ToDisplayString(DisplayFormats.Type), p.RefKind)).ToEquatableArray(),
+            Parameters: method.Parameters.Select(Parameter).ToEquatableArray(),
             Usings: CollectUsings(declaration, model, cancellationToken).ToEquatableArray(),
             Contracts: contracts.ToEquatableArray(),
             Snapshots: snapshots.ToEquatableArray(),
             Problems: problems.Distinct().ToEquatableArray(),
             HasErrors: rewriter.HasErrors,
+            ProbeUnsupportedReason: ProbeUnsupportedReason(method, resultType),
             Site: SourceSite.Of(declaration.Identifier.Parent ?? declaration));
+    }
+
+    private static ParameterModel Parameter(IParameterSymbol parameter) => new(
+        parameter.Name,
+        parameter.Type.ToDisplayString(DisplayFormats.Type),
+        parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+        parameter.RefKind,
+        AllowsNull: parameter.Type.IsReferenceType
+            ? parameter.NullableAnnotation == NullableAnnotation.Annotated
+            : parameter.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T);
+
+    // A probe passes arguments through object?[] and returns the result boxed, so types that cannot be boxed or
+    // named in typeof cannot be probed. The member is still registered, with this as the reason.
+    private static string? ProbeUnsupportedReason(IMethodSymbol method, ITypeSymbol? resultType)
+    {
+        foreach (var parameter in method.Parameters)
+        {
+            if (!CanBox(parameter.Type))
+            {
+                return $"parameter '{parameter.Name}' is a {parameter.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}, which cannot be passed as an object";
+            }
+        }
+
+        if (resultType is not null && !CanBox(resultType))
+        {
+            return $"the result is a {resultType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}, which cannot be returned as an object";
+        }
+
+        return null;
+
+        static bool CanBox(ITypeSymbol type) => !type.IsRefLikeType && type.TypeKind is not (TypeKind.Pointer or TypeKind.FunctionPointer);
     }
 
     // What the wrapper awaits, if anything, and the type Result<T>() stands for.

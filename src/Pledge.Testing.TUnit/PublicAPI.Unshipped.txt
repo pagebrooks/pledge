@@ -1,1 +1,15 @@
 #nullable enable
+override PledgeContracts.Testing.TUnit.PledgeCase.ToString() -> string!
+PledgeContracts.Testing.TUnit.PledgeCase
+PledgeContracts.Testing.TUnit.PledgeCase.CheckAsync() -> System.Threading.Tasks.Task!
+PledgeContracts.Testing.TUnit.PledgeCase.CheckAsync(PledgeContracts.Testing.PledgePropertyOptions! options) -> System.Threading.Tasks.Task!
+PledgeContracts.Testing.TUnit.PledgeCase.Iterations.get -> int
+PledgeContracts.Testing.TUnit.PledgeCase.Member.get -> PledgeContracts.PledgedMember!
+PledgeContracts.Testing.TUnit.PledgeCase.Seed.get -> string?
+PledgeContracts.Testing.TUnit.PledgedMembersAttribute
+PledgeContracts.Testing.TUnit.PledgedMembersAttribute.Iterations.get -> int
+PledgeContracts.Testing.TUnit.PledgedMembersAttribute.Iterations.set -> void
+PledgeContracts.Testing.TUnit.PledgedMembersAttribute.PledgedMembersAttribute(System.Type! type) -> void
+PledgeContracts.Testing.TUnit.PledgedMembersAttribute.Seed.get -> string?
+PledgeContracts.Testing.TUnit.PledgedMembersAttribute.Seed.set -> void
+PledgeContracts.Testing.TUnit.PledgedMembersAttribute.Type.get -> System.Type!

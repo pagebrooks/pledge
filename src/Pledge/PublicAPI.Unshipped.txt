@@ -1,4 +1,8 @@
 #nullable enable
+override PledgeContracts.PledgedContract.ToString() -> string!
+override PledgeContracts.PledgedMember.ToString() -> string!
+override PledgeContracts.PledgedParameter.ToString() -> string!
+override PledgeContracts.PledgeOutcome.ToString() -> string!
 override PledgeContracts.PledgeViolation.Equals(object? obj) -> bool
 override PledgeContracts.PledgeViolation.GetHashCode() -> int
 override PledgeContracts.PledgeViolation.ToString() -> string!
@@ -13,10 +17,49 @@ PledgeContracts.Pledge
 PledgeContracts.PledgeBlame
 PledgeContracts.PledgeBlame.Callee = 1 -> PledgeContracts.PledgeBlame
 PledgeContracts.PledgeBlame.Caller = 0 -> PledgeContracts.PledgeBlame
+PledgeContracts.PledgedContract
+PledgeContracts.PledgedContract.ExceptionType.get -> System.Type?
+PledgeContracts.PledgedContract.Expression.get -> string!
+PledgeContracts.PledgedContract.Kind.get -> PledgeContracts.PledgeKind
+PledgeContracts.PledgedContract.PledgedContract(PledgeContracts.PledgeKind kind, string! expression, System.Type? exceptionType) -> void
+PledgeContracts.PledgedMember
+PledgeContracts.PledgedMember.Contracts.get -> System.Collections.Generic.IReadOnlyList<PledgeContracts.PledgedContract!>!
+PledgeContracts.PledgedMember.DeclaringType.get -> System.Type!
+PledgeContracts.PledgedMember.IsStatic.get -> bool
+PledgeContracts.PledgedMember.Name.get -> string!
+PledgeContracts.PledgedMember.Parameters.get -> System.Collections.Generic.IReadOnlyList<PledgeContracts.PledgedParameter!>!
+PledgeContracts.PledgedMember.PledgedMember(System.Type! declaringType, string! name, string! signature, bool isStatic, System.Type? resultType, System.Collections.Generic.IReadOnlyList<PledgeContracts.PledgedParameter!>! parameters, System.Collections.Generic.IReadOnlyList<PledgeContracts.PledgedContract!>! contracts, PledgeContracts.PledgeProbe? probe, string? unsupportedReason = null) -> void
+PledgeContracts.PledgedMember.Probe.get -> PledgeContracts.PledgeProbe?
+PledgeContracts.PledgedMember.ResultType.get -> System.Type?
+PledgeContracts.PledgedMember.Signature.get -> string!
+PledgeContracts.PledgedMember.UnsupportedReason.get -> string?
+PledgeContracts.PledgedParameter
+PledgeContracts.PledgedParameter.AllowsNull.get -> bool
+PledgeContracts.PledgedParameter.Direction.get -> PledgeContracts.PledgedParameterDirection
+PledgeContracts.PledgedParameter.Name.get -> string!
+PledgeContracts.PledgedParameter.PledgedParameter(string! name, System.Type! type, PledgeContracts.PledgedParameterDirection direction, bool allowsNull) -> void
+PledgeContracts.PledgedParameter.Type.get -> System.Type!
+PledgeContracts.PledgedParameterDirection
+PledgeContracts.PledgedParameterDirection.Out = 2 -> PledgeContracts.PledgedParameterDirection
+PledgeContracts.PledgedParameterDirection.Ref = 1 -> PledgeContracts.PledgedParameterDirection
+PledgeContracts.PledgedParameterDirection.Value = 0 -> PledgeContracts.PledgedParameterDirection
 PledgeContracts.PledgeKind
 PledgeContracts.PledgeKind.Invariant = 2 -> PledgeContracts.PledgeKind
 PledgeContracts.PledgeKind.Postcondition = 1 -> PledgeContracts.PledgeKind
 PledgeContracts.PledgeKind.Precondition = 0 -> PledgeContracts.PledgeKind
+PledgeContracts.PledgeOutcome
+PledgeContracts.PledgeOutcome.Exception.get -> System.Exception?
+PledgeContracts.PledgeOutcome.IsDeclared.get -> bool
+PledgeContracts.PledgeOutcome.Kind.get -> PledgeContracts.PledgeOutcomeKind
+PledgeContracts.PledgeOutcome.Result.get -> object?
+PledgeContracts.PledgeOutcome.Violation.get -> PledgeContracts.PledgeViolation?
+PledgeContracts.PledgeOutcomeKind
+PledgeContracts.PledgeOutcomeKind.Broken = 2 -> PledgeContracts.PledgeOutcomeKind
+PledgeContracts.PledgeOutcomeKind.Kept = 0 -> PledgeContracts.PledgeOutcomeKind
+PledgeContracts.PledgeOutcomeKind.Rejected = 1 -> PledgeContracts.PledgeOutcomeKind
+PledgeContracts.PledgeOutcomeKind.Threw = 3 -> PledgeContracts.PledgeOutcomeKind
+PledgeContracts.PledgeProbe
+PledgeContracts.PledgeRegistry
 PledgeContracts.PledgeRuntime
 PledgeContracts.PledgeViolation
 PledgeContracts.PledgeViolation.<Clone>$() -> PledgeContracts.PledgeViolation!
@@ -49,6 +92,13 @@ static PledgeContracts.Pledge.EnsuresOnThrow<TException>(bool condition, string?
 static PledgeContracts.Pledge.Old<T>(T expression) -> T
 static PledgeContracts.Pledge.Requires(bool condition, string? message = null) -> void
 static PledgeContracts.Pledge.Result<T>() -> T
+static PledgeContracts.PledgeOutcome.Broken(PledgeContracts.PledgeViolation! violation) -> PledgeContracts.PledgeOutcome!
+static PledgeContracts.PledgeOutcome.Kept(object? result) -> PledgeContracts.PledgeOutcome!
+static PledgeContracts.PledgeOutcome.Rejected(PledgeContracts.PledgeViolation! violation) -> PledgeContracts.PledgeOutcome!
+static PledgeContracts.PledgeOutcome.Threw(System.Exception! exception, bool isDeclared) -> PledgeContracts.PledgeOutcome!
+static PledgeContracts.PledgeRegistry.For(System.Reflection.Assembly! assembly) -> System.Collections.Generic.IReadOnlyList<PledgeContracts.PledgedMember!>!
+static PledgeContracts.PledgeRegistry.For(System.Type! type) -> System.Collections.Generic.IReadOnlyList<PledgeContracts.PledgedMember!>!
+static PledgeContracts.PledgeRegistry.Register(PledgeContracts.PledgedMember! member) -> void
 static PledgeContracts.PledgeRuntime.Enforce(PledgeContracts.PledgeViolation! violation) -> void
 static PledgeContracts.PledgeRuntime.EnforceFailFast(PledgeContracts.PledgeViolation! violation) -> void
 static PledgeContracts.PledgeRuntime.Observe(PledgeContracts.PledgeViolation! violation) -> void
@@ -56,3 +106,4 @@ static PledgeContracts.PledgeRuntime.ViolationHandler.get -> System.Action<Pledg
 static PledgeContracts.PledgeRuntime.ViolationHandler.set -> void
 static PledgeContracts.PledgeViolation.operator !=(PledgeContracts.PledgeViolation? left, PledgeContracts.PledgeViolation? right) -> bool
 static PledgeContracts.PledgeViolation.operator ==(PledgeContracts.PledgeViolation? left, PledgeContracts.PledgeViolation? right) -> bool
+virtual PledgeContracts.PledgeProbe.Invoke(object? receiver, object?[]! arguments) -> System.Threading.Tasks.ValueTask<PledgeContracts.PledgeOutcome!>

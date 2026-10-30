@@ -2,7 +2,14 @@ using Fixture;
 using PledgeContracts;
 
 // Prints one line per event so the tests can tell what each mode did: the handler seeing a violation, a call
-// returning (and with what), a call throwing (and what). EnforceFailFast never reaches "done".
+// returning (and with what), a call throwing (and what). EnforceFailFast never reaches "done". With the argument
+// "registry" it prints instead which members registered a testing probe.
+if (args is ["registry"])
+{
+    Console.WriteLine($"registry: {string.Join(", ", PledgeRegistry.For(typeof(Account)))}");
+    return;
+}
+
 PledgeRuntime.ViolationHandler = violation => Console.WriteLine($"handler: {violation.Kind} {violation.Expression}");
 
 var account = new Account(10m);

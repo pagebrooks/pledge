@@ -9,7 +9,7 @@ public sealed class NamespaceTests
     [Fact]
     public void No_shipped_namespace_is_rooted_at_Pledge()
     {
-        Assembly[] shipped = [typeof(Placeholder).Assembly, typeof(global::PledgeContracts.Testing.Xunit.Placeholder).Assembly];
+        Assembly[] shipped = [typeof(PledgeProperties).Assembly, typeof(global::PledgeContracts.Testing.Xunit.PledgeCase).Assembly];
 
         var offenders = shipped
             .SelectMany(assembly => assembly.GetTypes())

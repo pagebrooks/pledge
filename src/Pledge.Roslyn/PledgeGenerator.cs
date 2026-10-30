@@ -16,6 +16,7 @@ public sealed class PledgeGenerator : IIncrementalGenerator
         public const string Methods = "Methods";
         public const string CallSites = "CallSites";
         public const string Misplaced = "Misplaced";
+        public const string Probes = "Probes";
     }
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -46,13 +47,24 @@ public sealed class PledgeGenerator : IIncrementalGenerator
 
         var options = context.AnalyzerConfigOptionsProvider.Select(static (provider, _) => (
             Modes: PledgeModes.Parse(Option(provider, PledgeModes.ModeProperty), Option(provider, PledgeModes.PreconditionsProperty), Option(provider, PledgeModes.PostconditionsProperty)),
-            Metadata: PledgeModes.ParseMetadata(provider.GlobalOptions.TryGetValue(PledgeModes.MetadataProperty, out var metadata) ? metadata : null)));
+            Metadata: PledgeModes.ParseSwitch(Option(provider, PledgeModes.MetadataProperty)),
+            Registry: Option(provider, PledgeModes.RegistryProperty)));
 
         var interceptorsEnabled = context.ParseOptionsProvider.Select(static (parseOptions, _) => InterceptorsEnabled(parseOptions));
 
         context.RegisterSourceOutput(methods, static (productionContext, method) => ReportProblems(productionContext, method));
         context.RegisterSourceOutput(misplaced, static (productionContext, contract) =>
             productionContext.ReportDiagnostic(Diagnostic.Create(Diagnostics.UnsupportedTarget, contract.Site.ToLocation(), contract.Member, contract.Problem)));
+
+        // Probes are per method, so editing one contracted method regenerates only its probe.
+        context.RegisterSourceOutput(methods.Combine(options).WithTrackingName(TrackingNames.Probes), static (productionContext, input) =>
+        {
+            var (method, settings) = input;
+            if (method.IsGenerable && PledgeModes.ParseRegistry(settings.Registry, settings.Modes))
+            {
+                productionContext.AddSource(ProbeEmitter.HintName(method), ProbeEmitter.Emit(method));
+            }
+        });
 
         var collected = methods.Collect();
         context.RegisterSourceOutput(collected.Combine(options), static (productionContext, input) => EmitMetadata(productionContext, input.Left, input.Right.Metadata));

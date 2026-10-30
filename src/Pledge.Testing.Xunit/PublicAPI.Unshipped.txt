@@ -1,1 +1,18 @@
 #nullable enable
+override PledgeContracts.Testing.Xunit.PledgeCase.ToString() -> string!
+override PledgeContracts.Testing.Xunit.PledgedMembersAttribute.GetData(System.Reflection.MethodInfo! testMethod, Xunit.Sdk.DisposalTracker! disposalTracker) -> System.Threading.Tasks.ValueTask<System.Collections.Generic.IReadOnlyCollection<Xunit.ITheoryDataRow!>!>
+override PledgeContracts.Testing.Xunit.PledgedMembersAttribute.SupportsDiscoveryEnumeration() -> bool
+PledgeContracts.Testing.Xunit.PledgeCase
+PledgeContracts.Testing.Xunit.PledgeCase.CheckAsync() -> System.Threading.Tasks.Task!
+PledgeContracts.Testing.Xunit.PledgeCase.CheckAsync(PledgeContracts.Testing.PledgePropertyOptions! options) -> System.Threading.Tasks.Task!
+PledgeContracts.Testing.Xunit.PledgeCase.Iterations.get -> int
+PledgeContracts.Testing.Xunit.PledgeCase.Member.get -> PledgeContracts.PledgedMember!
+PledgeContracts.Testing.Xunit.PledgeCase.PledgeCase() -> void
+PledgeContracts.Testing.Xunit.PledgeCase.Seed.get -> string?
+PledgeContracts.Testing.Xunit.PledgedMembersAttribute
+PledgeContracts.Testing.Xunit.PledgedMembersAttribute.Iterations.get -> int
+PledgeContracts.Testing.Xunit.PledgedMembersAttribute.Iterations.set -> void
+PledgeContracts.Testing.Xunit.PledgedMembersAttribute.PledgedMembersAttribute(System.Type! type) -> void
+PledgeContracts.Testing.Xunit.PledgedMembersAttribute.Seed.get -> string?
+PledgeContracts.Testing.Xunit.PledgedMembersAttribute.Seed.set -> void
+PledgeContracts.Testing.Xunit.PledgedMembersAttribute.Type.get -> System.Type!

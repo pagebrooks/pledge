@@ -28,6 +28,14 @@ internal static class PledgeModes
     // Metadata attributes are documentation, not checks, so they have their own switch and default to on in every mode.
     public const string MetadataProperty = "build_property.PledgeMetadata";
 
+    // Probes for the testing bridge are executable code, so by default they follow the modes: on unless every kind is
+    // Ignore, which keeps Ignore builds identical to builds without Pledge.
+    public const string RegistryProperty = "build_property.PledgeRegistry";
+
+    public static bool ParseRegistry(string? value, ModeSettings modes) => string.IsNullOrEmpty(value)
+        ? modes.Preconditions != PledgeMode.Ignore || modes.Postconditions != PledgeMode.Ignore
+        : ParseSwitch(value);
+
     public static ModeSettings Parse(string? mode, string? preconditions, string? postconditions)
     {
         var overall = Parse(mode);
@@ -58,7 +66,7 @@ internal static class PledgeModes
 
     // MSBuild conditions treat no and off as false (and yes and on as true), so Pledge.targets' validation accepts
     // them; the generator must read them the same way.
-    public static bool ParseMetadata(string? value) =>
+    public static bool ParseSwitch(string? value) =>
         !(string.Equals(value, "false", StringComparison.OrdinalIgnoreCase)
             || string.Equals(value, "no", StringComparison.OrdinalIgnoreCase)
             || string.Equals(value, "off", StringComparison.OrdinalIgnoreCase));

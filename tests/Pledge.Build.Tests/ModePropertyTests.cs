@@ -3,7 +3,7 @@ namespace PledgeContracts.Build.Tests;
 // What Pledge.targets makes of a project's properties, read back from MSBuild after every import.
 public sealed class ModePropertyTests
 {
-    private static readonly string[] _modeProperties = ["PledgeMode", "PledgePreconditions", "PledgePostconditions", "PledgeInvariants", "PledgeMetadata"];
+    private static readonly string[] _modeProperties = ["PledgeMode", "PledgePreconditions", "PledgePostconditions", "PledgeInvariants", "PledgeMetadata", "PledgeRegistry"];
 
     [Theory]
     [InlineData("Debug", "Enforce")]
@@ -20,6 +20,33 @@ public sealed class ModePropertyTests
         Assert.Equal(expected, values["PledgePostconditions"]);
         Assert.Equal(expected, values["PledgeInvariants"]);
         Assert.Equal("true", values["PledgeMetadata"]);
+        Assert.Equal(expected == "Ignore" ? "false" : "true", values["PledgeRegistry"]);
+    }
+
+    [Theory]
+    [InlineData("Ignore", null, null, "false")]
+    [InlineData("Ignore", "Observe", null, "true")]
+    [InlineData("Enforce", null, "false", "false")]
+    [InlineData("Ignore", null, "true", "true")]
+    public async Task The_registry_is_on_unless_every_kind_is_Ignore_or_it_is_set(string mode, string? postconditions, string? registry, string expected)
+    {
+        using var fixture = Fixture.Create();
+        var properties = new Dictionary<string, string> { ["PledgeMode"] = mode };
+        if (postconditions is not null)
+        {
+            properties["PledgePostconditions"] = postconditions;
+        }
+
+        if (registry is not null)
+        {
+            properties["PledgeRegistry"] = registry;
+        }
+
+        fixture.WriteProject("App", properties: properties);
+
+        var values = await fixture.EvaluateAsync("App", _modeProperties);
+
+        Assert.Equal(expected, values["PledgeRegistry"]);
     }
 
     [Fact]
@@ -82,13 +109,27 @@ public sealed class ModePropertyTests
         Assert.Contains("PledgeMetadata 'maybe' is not recognized. Use true or false.", result.Combined, StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("yes")]
-    [InlineData("off")]
-    public async Task MSBuild_boolean_spellings_of_the_metadata_switch_are_accepted(string value)
+    [Fact]
+    public async Task An_unknown_registry_switch_fails_the_build()
     {
         using var fixture = Fixture.Create();
-        fixture.WriteProject("App", properties: new Dictionary<string, string> { ["PledgeMetadata"] = value });
+        fixture.WriteProject("App", properties: new Dictionary<string, string> { ["PledgeRegistry"] = "sometimes" });
+
+        var result = await fixture.RunTargetAsync("App", "PledgeValidateMode");
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("PledgeRegistry 'sometimes' is not recognized. Use true or false.", result.Combined, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("PledgeMetadata", "yes")]
+    [InlineData("PledgeMetadata", "off")]
+    [InlineData("PledgeRegistry", "on")]
+    [InlineData("PledgeRegistry", "no")]
+    public async Task MSBuild_boolean_spellings_of_the_switches_are_accepted(string property, string value)
+    {
+        using var fixture = Fixture.Create();
+        fixture.WriteProject("App", properties: new Dictionary<string, string> { [property] = value });
 
         var result = await fixture.RunTargetAsync("App", "PledgeValidateMode");
 

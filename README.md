@@ -13,7 +13,8 @@ clauses keep their jobs.
 > generator and interceptors, with the enforcement modes, blame with file and line, assembly
 > metadata and a Native AOT sample. Analyzers PLEDGE001-PLEDGE009 with code fixes catch misplaced
 > contracts, misused `Result`/`Old`, impure expressions, mutable `Old` snapshots and constant arguments
-> that break a precondition. The testing bridge is next.
+> that break a precondition. The testing bridge turns the same contracts into property-based tests
+> with CsCheck, through xUnit or TUnit.
 > The full design, semantics and roadmap are in [DESIGN.md](DESIGN.md).
 
 ## What it looks like
@@ -60,6 +61,34 @@ the member and the call site:
 Precondition of Account.Withdraw violated by its caller: insufficient funds [amount <= Balance] (at /src/Program.cs:9)
 ```
 
+## Contracts as property tests
+
+`Pledge.Testing` runs every contracted member of a type as a property test: CsCheck generates the
+receiver and arguments, the preconditions discard the inputs they reject, and the postconditions are
+the oracle. Nothing is written twice.
+
+```csharp
+[Fact]
+public void Account_pledges_hold() => PledgeProperties.Check<Account>(iterations: 1_000);
+
+// Or one test per member, with Pledge.Testing.Xunit or Pledge.Testing.TUnit:
+[Theory, PledgedMembers(typeof(Account))]
+public Task Pledges_hold(PledgeCase pledge) => pledge.CheckAsync();
+```
+
+A failure is shrunk to the smallest input and names the contract it broke:
+
+```text
+RoundingAccount.Withdraw(decimal) broke its pledge. Postcondition of RoundingAccount.Withdraw violated: Balance == Old(Balance) - amount
+Counterexample:
+  receiver = new RoundingAccount(542m)
+  amount = 0.00000000000000000001701m
+Replay this input with Seed = "0VtUVmxeZKh1" and Iterations = 1. CsCheck: 3 shrinks, 38 skipped, 100 total.
+```
+
+The generator registers a probe for each contracted member unless every contract kind is `Ignore`,
+so a project tested in Release sets `<PledgeRegistry>true</PledgeRegistry>`.
+
 ## Repository layout
 
 | Path | Package | Purpose |
@@ -72,7 +101,7 @@ Precondition of Account.Withdraw violated by its caller: insufficient funds [amo
 | `src/Pledge.Testing.Xunit` | `Pledge.Testing.Xunit` | xUnit.net v3 adapter. |
 | `src/Pledge.Testing.TUnit` | `Pledge.Testing.TUnit` | TUnit adapter. |
 | `docs/rules` | | One page per PLEDGE diagnostic, linked from the diagnostics themselves. |
-| `tests/` | | xUnit v3 test projects, one per area. `Pledge.Integration.Tests` consumes the generator the way a package consumer does; `Pledge.Build.Tests` builds throwaway projects with the real SDK to check the mode properties, each mode's behaviour and the byte-identical `Ignore` output. |
+| `tests/` | | Test projects, one per area, on xUnit v3 except the TUnit adapter's. `Pledge.Integration.Tests` consumes the generator the way a package consumer does; `Pledge.Build.Tests` builds throwaway projects with the real SDK to check the mode properties, each mode's behaviour and the byte-identical `Ignore` output. `Pledge.Testing.Tests` holds the seeded bug the unit tests miss and the property tests find; `Pledge.Testing.TUnit.Tests` runs under TUnit. |
 | `samples/BankAccount` | | The bank-account domain under contracts. |
 
 ## Building

@@ -84,7 +84,26 @@ public sealed class ModeBehaviourTests
         Assert.Equal(!enforced, result.Output.Contains("deposit: returned 9", StringComparison.Ordinal));
     }
 
-    private static async Task<ProcessResult> RunAsync(string configuration, IReadOnlyDictionary<string, string>? properties)
+    [Theory]
+    [InlineData("Ignore", null, "registry: ")]
+    [InlineData("Ignore", "true", "registry: Account.Deposit(decimal), Account.Withdraw(decimal)")]
+    [InlineData("Enforce", null, "registry: Account.Deposit(decimal), Account.Withdraw(decimal)")]
+    [InlineData("Enforce", "false", "registry: ")]
+    public async Task Testing_probes_follow_the_modes_unless_PledgeRegistry_is_set(string mode, string? registry, string expected)
+    {
+        var properties = new Dictionary<string, string> { ["PledgeMode"] = mode };
+        if (registry is not null)
+        {
+            properties["PledgeRegistry"] = registry;
+        }
+
+        var result = await RunAsync("Release", properties, "registry");
+
+        result.AssertSucceeded();
+        AssertLines(result, expected.TrimEnd());
+    }
+
+    private static async Task<ProcessResult> RunAsync(string configuration, IReadOnlyDictionary<string, string>? properties, params string[] arguments)
     {
         using var fixture = Fixture.Create();
         fixture.WriteProject("App", outputType: "Exe", properties: properties);
@@ -93,7 +112,7 @@ public sealed class ModeBehaviourTests
         var build = await fixture.BuildAsync("App", configuration);
         build.AssertSucceeded();
 
-        return await fixture.DotnetAsync(fixture.OutputPath("App", configuration));
+        return await fixture.DotnetAsync([fixture.OutputPath("App", configuration), .. arguments]);
     }
 
     private static void AssertLines(ProcessResult result, params string[] expected)

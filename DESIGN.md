@@ -158,7 +158,7 @@ namespace PledgeContracts.Generated
 
 | Mode | Behavior | Cost | C++26 equivalent |
 | --- | --- | --- | --- |
-| `Ignore` | Generator emits no wrappers; calls compile away (metadata attributes still emitted unless `PledgeMetadata` is `false`) | Zero | ignore |
+| `Ignore` | Generator emits no wrappers and, unless `PledgeRegistry` is set, no testing probes; calls compile away (metadata attributes still emitted unless `PledgeMetadata` is `false`) | Zero | ignore |
 | `Observe` | Checks run; violations go to `PledgeRuntime.ViolationHandler` and execution continues | Checks + handler | observe |
 | `Enforce` | Checks run; violations throw the kind-specific exception | Checks | enforce |
 | `EnforceFailFast` | Checks run; violations call `Environment.FailFast` after the handler | Checks | quick-enforce |
@@ -172,7 +172,7 @@ namespace PledgeContracts.Generated
 </PropertyGroup>
 ```
 
-`PledgePreconditions`, `PledgePostconditions` and `PledgeInvariants` default to `PledgeMode` and override it for one kind; `EnsuresOnThrow` is a postcondition. A kind in `Ignore` drops out of the wrappers entirely, and `Old` snapshots go with the postconditions, so ignoring postconditions also removes the snapshot locals. A method whose every kind is ignored gets no wrapper and no PLEDGE006. `PledgeInvariants` is accepted and validated now so projects can set it ahead of v1.0; it has nothing to control until invariants ship. Values are case-insensitive. `PledgeMetadata` takes MSBuild booleans, so `false`, `no` and `off` all turn the attributes off, and the generator reads them the same way the targets validate them (found Oct 29, 2026: MSBuild compares `yes`/`on`/`no`/`off` as booleans in conditions).
+`PledgePreconditions`, `PledgePostconditions` and `PledgeInvariants` default to `PledgeMode` and override it for one kind; `EnsuresOnThrow` is a postcondition. A kind in `Ignore` drops out of the wrappers entirely, and `Old` snapshots go with the postconditions, so ignoring postconditions also removes the snapshot locals. A method whose every kind is ignored gets no wrapper and no PLEDGE006. `PledgeInvariants` is accepted and validated now so projects can set it ahead of v1.0; it has nothing to control until invariants ship. Values are case-insensitive. `PledgeMetadata` takes MSBuild booleans, so `false`, `no` and `off` all turn the attributes off, and the generator reads them the same way the targets validate them (found Oct 29, 2026: MSBuild compares `yes`/`on`/`no`/`off` as booleans in conditions). `PledgeRegistry`, also a boolean, controls the testing bridge's probes (see the testing bridge); it defaults to true unless preconditions and postconditions are both `Ignore`.
 
 **Violation handler.** `PledgeRuntime.ViolationHandler` is a static delegate receiving a `PledgeViolation` record (kind, expression text, member, blame, caller file/line from `[CallerFilePath]`/`[CallerLineNumber]` captured at generation time). Default in `Enforce` throws; teams wire it to logging in `Observe`. This is the C++26 `handle_contract_violation` idea and it is what makes `Observe` useful for rolling contracts into an existing codebase without breaking it.
 
@@ -239,18 +239,36 @@ PLEDGE005, PLEDGE006 and PLEDGE009 are reported by the generator, which is the c
 
 This is the differentiator no competitor has and the one most worth leading with: every contracted method becomes a free property-based test.
 
-Because the generator lifts each contract into real, callable predicates — `Account__Pledges.Withdraw_Pre(account, amount)` and `Withdraw_Post(account, amount, old_Balance, result)` — it can also emit a registry of pledged members. A companion package (`Pledge.Testing`) walks that registry and runs a property test per member:
+The generator already lifts every contract into callable code for the wrappers, so it also emits a *probe* per contracted method: a delegate that takes a receiver and an argument array, runs every contract around one direct call, and returns a `PledgeOutcome` instead of throwing (`Kept` with the result, `Rejected` when a precondition fails, `Broken` when a postcondition or `EnsuresOnThrow` fails or a contract expression throws, `Threw` with whether an `EnsuresOnThrow` declared the exception). A file-local `[ModuleInitializer]` registers each probe with `PledgeRegistry` as a `PledgedMember` carrying the member's signature, parameter types and nullability, result type and contract texts. Probes check every contract whatever the modes, and they call the original method, since generated code is never intercepted. A member whose parameters or result cannot be boxed (`Span<T>`, pointers) is registered without a probe and with the reason. A companion package (`Pledge.Testing`) walks that registry and runs a property test per member:
 
-1. Generate instances of the receiver and arguments with CsCheck (or FsCheck) generators, user-overridable per type.
-2. Discard samples that fail the preconditions (preconditions are the generator's filter, not a failure).
-3. Call the method.
-4. Assert the postconditions; on failure, shrink and report the minimal counterexample with the contract text.
+1. Generate a receiver and arguments with CsCheck: primitives, strings, dates, `Guid`, enums, `Nullable<T>`, arrays and the common collection interfaces, and any type with a public constructor whose parameters can be generated, three levels deep. A reference parameter annotated nullable gets `null` about one time in ten. `PledgePropertyOptions.Use<T>(Gen<T>)` overrides any type, the receiver included. Values are generated as constructor recipes and built fresh for each call, so a counterexample prints the inputs (`new Account(542m)`) rather than the state the member left behind.
+2. Discard samples that fail the preconditions or that the receiver's constructor refuses (preconditions are the generator's filter, not a failure). A run in which every sample was discarded fails and points at `Use<T>`.
+3. Call the method through its probe.
+4. Fail on a broken postcondition, a broken `EnsuresOnThrow` or an exception no `EnsuresOnThrow` declares (`AllowUndeclaredExceptions` relaxes the last); CsCheck shrinks the failure and `PledgePropertyException` reports the contract, the shrunk inputs and the seed. CsCheck starts a seeded run with the seed's own sample, so `Seed` plus `Iterations = 1` replays exactly that input.
 
 ```csharp
 [Fact]
 public void Account_pledges_hold() =>
     PledgeProperties.Check<Account>(iterations: 1_000);
+
+// One test per member in the runner, with xUnit (Pledge.Testing.Xunit) or TUnit (Pledge.Testing.TUnit):
+[Theory, PledgedMembers(typeof(Account))]
+public Task Pledges_hold(PledgeCase pledge) => pledge.CheckAsync();
 ```
+
+A failure reads:
+
+```text
+RoundingAccount.Withdraw(decimal) broke its pledge. Postcondition of RoundingAccount.Withdraw violated: Balance == Old(Balance) - amount
+Counterexample:
+  receiver = new RoundingAccount(542m)
+  amount = 0.00000000000000000001701m
+Replay this input with Seed = "0VtUVmxeZKh1" and Iterations = 1. CsCheck: 3 shrinks, 38 skipped, 100 total.
+```
+
+The registry is generated when `PledgeRegistry` is true, which is the default unless every contract kind is `Ignore`: probes are executable code, so an `Ignore` build stays byte-identical to one without Pledge. A test project that property-tests a Release build of its subject sets `<PledgeRegistry>true</PledgeRegistry>` (or a mode) in the subject. The xUnit adapter's `PledgeCase` serializes as its type and signature, so test explorers list each member at discovery; members without a probe appear as skipped tests with the reason.
+
+The seeded-bug check from the exit criteria lives in `tests/Pledge.Testing.Tests`: `RoundingAccount.Withdraw` rounds the amount to cents before taking it, every plausible unit test (whole cents) passes, and the property test fails on the first run with the postcondition and a shrunk amount (found Oct 29, 2026: random decimals have digits past the cents almost always, so the bug is found in the first few accepted samples).
 
 **What this buys:**
 
@@ -258,7 +276,7 @@ public void Account_pledges_hold() =>
 - Invariants get hammered across random public-method sequences (stateful testing, v1.0), which is where real invariant bugs live.
 - It gives the "AI wrote the body, the contract says what it must do" workflow a concrete, automated shape.
 
-**Scope.** MVP: xUnit and TUnit adapters, CsCheck backend, stateless methods with primitive and record arguments. v1.0: FsCheck backend, stateful sequences for invariants, custom generators via attribute, snapshot of counterexamples to a file for regression.
+**Scope.** MVP: xUnit and TUnit adapters, CsCheck backend, stateless methods with primitive, collection and record arguments. v1.0: FsCheck backend, stateful sequences for invariants, custom generators via attribute, snapshot of counterexamples to a file for regression.
 
 ## Metadata and documentation
 

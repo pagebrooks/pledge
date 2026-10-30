@@ -46,6 +46,7 @@ internal static class GeneratorHarness
         string? metadata = null,
         string? preconditions = null,
         string? postconditions = null,
+        string? registry = null,
         params string[] extraSources)
     {
         var parseOptions = ParseOptions(interceptorsEnabled);
@@ -60,6 +61,7 @@ internal static class GeneratorHarness
                 ["build_property.PledgeMetadata"] = metadata,
                 ["build_property.PledgePreconditions"] = preconditions,
                 ["build_property.PledgePostconditions"] = postconditions,
+                ["build_property.PledgeRegistry"] = registry,
             }),
             driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
 
@@ -126,9 +128,12 @@ internal sealed class GeneratorRun
     public IReadOnlyDictionary<string, string> GeneratedSources =>
         Result.GeneratedTrees.ToDictionary(tree => Path.GetFileName(tree.FilePath), tree => tree.ToString(), StringComparer.Ordinal);
 
-    // The wrapper files, leaving the metadata file aside.
+    // The wrapper files, leaving the metadata file and the testing probes aside.
     public IReadOnlyDictionary<string, string> Wrappers =>
-        GeneratedSources.Where(pair => pair.Key != "PledgeContracts.Metadata.g.cs").ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        GeneratedSources.Where(pair => pair.Key != "PledgeContracts.Metadata.g.cs" && !IsProbe(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+
+    public IReadOnlyDictionary<string, string> Probes =>
+        GeneratedSources.Where(pair => IsProbe(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
 
     public string? Metadata => GeneratedSources.TryGetValue("PledgeContracts.Metadata.g.cs", out var source) ? source : null;
 
@@ -145,6 +150,8 @@ internal sealed class GeneratorRun
         stream.Position = 0;
         return new AssemblyLoadContext(OutputCompilation.AssemblyName).LoadFromStream(stream);
     }
+
+    private static bool IsProbe(string hintName) => hintName.EndsWith(".Probe.g.cs", StringComparison.Ordinal);
 
     public static GeneratorRun Create(GeneratorDriver driver, Compilation compilation)
     {

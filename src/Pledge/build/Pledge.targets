@@ -15,6 +15,13 @@
     <PledgeInvariants Condition="'$(PledgeInvariants)' == ''">$(PledgeMode)</PledgeInvariants>
     <!-- The [Requires]/[Ensures] metadata attributes are documentation, not checks: on in every mode unless turned off. -->
     <PledgeMetadata Condition="'$(PledgeMetadata)' == ''">true</PledgeMetadata>
+    <!--
+      The registry of probes Pledge.Testing runs contracts through. Probes are executable code, so it follows the
+      modes: on unless every kind is Ignore, which keeps an Ignore build identical to one without Pledge. A test
+      project that property-tests a Release build of its subject sets it on in the subject.
+    -->
+    <PledgeRegistry Condition="'$(PledgeRegistry)' == '' and '$(PledgePreconditions)' == 'Ignore' and '$(PledgePostconditions)' == 'Ignore'">false</PledgeRegistry>
+    <PledgeRegistry Condition="'$(PledgeRegistry)' == ''">true</PledgeRegistry>
   </PropertyGroup>
 
   <!--
@@ -32,6 +39,7 @@
     <CompilerVisibleProperty Include="PledgePostconditions" />
     <CompilerVisibleProperty Include="PledgeInvariants" />
     <CompilerVisibleProperty Include="PledgeMetadata" />
+    <CompilerVisibleProperty Include="PledgeRegistry" />
   </ItemGroup>
 
   <Target Name="PledgeValidateMode" BeforeTargets="CoreCompile">
@@ -48,6 +56,9 @@
     <Error
       Condition="'$(PledgeMetadata)' != 'true' and '$(PledgeMetadata)' != 'false'"
       Text="PledgeMetadata '$(PledgeMetadata)' is not recognized. Use true or false." />
+    <Error
+      Condition="'$(PledgeRegistry)' != 'true' and '$(PledgeRegistry)' != 'false'"
+      Text="PledgeRegistry '$(PledgeRegistry)' is not recognized. Use true or false." />
   </Target>
 
   <!--

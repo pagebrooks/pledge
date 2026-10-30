@@ -19,7 +19,9 @@ internal readonly record struct SourceSite(string FilePath, TextSpan Span, LineP
     public Location ToLocation() => Location.Create(FilePath, Span, LineSpan);
 }
 
-internal sealed record ParameterModel(string Name, string Type, RefKind RefKind)
+// Type is for declarations (nullable annotations kept); TypeOf is legal inside typeof(...). AllowsNull is true for
+// annotated reference types and Nullable<T>, so the testing bridge knows when null is a legal input.
+internal sealed record ParameterModel(string Name, string Type, string TypeOf, RefKind RefKind, bool AllowsNull)
 {
     public string Declaration => Modifier(forArgument: false) + Type + " " + Name;
 
@@ -82,6 +84,7 @@ internal sealed record ContractedMethod(
     string ReturnType,
     AsyncKind AsyncKind,
     string? ResultType,
+    string? ResultTypeOf,
     bool OnThrowCoversCancellation,
     EquatableArray<ParameterModel> Parameters,
     EquatableArray<string> Usings,
@@ -89,6 +92,7 @@ internal sealed record ContractedMethod(
     EquatableArray<SnapshotModel> Snapshots,
     EquatableArray<string> Problems,
     bool HasErrors,
+    string? ProbeUnsupportedReason,
     SourceSite Site)
 {
     public bool HasResult => ResultType is not null;
