@@ -55,6 +55,7 @@ internal enum AsyncKind
 
 // One lifted contract: the author's text for messages and metadata, the rewritten expression for the generated
 // check. ExceptionType and ExceptionDepth are set for EnsuresOnThrow; depth orders catch clauses derived-first.
+// CannotThrow lets the check skip the try/catch around the expression (ThrowAnalysis).
 internal sealed record ContractModel(
     int Index,
     ContractKind Kind,
@@ -63,7 +64,8 @@ internal sealed record ContractModel(
     string? Message,
     SourceSite Site,
     string? ExceptionType,
-    int ExceptionDepth)
+    int ExceptionDepth,
+    bool CannotThrow)
 {
     public string PledgeKind => Kind == ContractKind.Precondition ? "Precondition" : "Postcondition";
 }

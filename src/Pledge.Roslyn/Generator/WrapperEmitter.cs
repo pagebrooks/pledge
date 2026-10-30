@@ -189,6 +189,31 @@ internal static class WrapperEmitter
         var ok = "__pledgeOk" + contract.Index;
         var line = $"#line {contract.Site.Line} \"{contract.Site.FilePath}\"";
 
+        if (contract.CannotThrow)
+        {
+            // Nothing to catch, and the try would keep the JIT from inlining the wrapper.
+            builder.AppendLine(line);
+            builder.AppendLine($"{indent}bool {ok} = ({contract.Expression});");
+            builder.AppendLine("#line default");
+        }
+        else
+        {
+            AppendGuardedEvaluation(builder, method, contract, report, thrown, ok, line, indent);
+        }
+
+        builder.AppendLine();
+        builder.AppendLine($"{indent}if (!{ok})");
+        builder.AppendLine($"{indent}{{");
+        builder.AppendLine(line);
+        AppendReport(builder, method, contract, report, thrown, cause: null, indent: indent + "    ");
+        builder.AppendLine("#line default");
+        builder.AppendLine($"{indent}}}");
+        builder.AppendLine();
+    }
+
+    // An exception from the expression is the contract's failure too, reported with the exception as its Cause.
+    private static void AppendGuardedEvaluation(StringBuilder builder, ContractedMethod method, ContractModel contract, string report, string? thrown, string ok, string line, string indent)
+    {
         builder.AppendLine($"{indent}bool {ok};");
         builder.AppendLine($"{indent}try");
         builder.AppendLine($"{indent}{{");
@@ -201,14 +226,6 @@ internal static class WrapperEmitter
         AppendReport(builder, method, contract, report, thrown, cause: "__pledgeCause", indent: indent + "    ");
         builder.AppendLine($"{indent}    {ok} = true;");
         builder.AppendLine($"{indent}}}");
-        builder.AppendLine();
-        builder.AppendLine($"{indent}if (!{ok})");
-        builder.AppendLine($"{indent}{{");
-        builder.AppendLine(line);
-        AppendReport(builder, method, contract, report, thrown, cause: null, indent: indent + "    ");
-        builder.AppendLine("#line default");
-        builder.AppendLine($"{indent}}}");
-        builder.AppendLine();
     }
 
     private static void AppendReport(StringBuilder builder, ContractedMethod method, ContractModel contract, string report, string? thrown, string? cause, string indent)

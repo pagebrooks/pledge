@@ -79,7 +79,8 @@ internal static class ContractParser
                 Message: message is null ? null : rewriter.Lift(message),
                 Site: SourceSite.Of(condition),
                 ExceptionType: exceptionType,
-                ExceptionDepth: exceptionDepth));
+                ExceptionDepth: exceptionDepth,
+                CannotThrow: ThrowAnalysis.CannotThrow(condition, model, pledgeType, kind, cancellationToken)));
         }
 
         if (contracts.Count == 0 && problems.Count == 0)
