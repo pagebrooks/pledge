@@ -1,4 +1,4 @@
-# Pledge — Design by Contract for .NET: MVP Requirements & Differentiators
+# Pledge — Design by Contract for .NET: Design
 
 Oct 29, 2026 · @Page
 
@@ -11,27 +11,6 @@ Pledge is a free, MIT-licensed Design-by-Contract library for modern .NET that g
 **Why it should exist.** .NET had this (Code Contracts, 2008–2017) and lost it to a brittle mechanism, not to a lack of demand. C++26 just standardized contracts (March 2026) with a design .NET can borrow wholesale. The only living .NET option, Metalama.Patterns.Contracts, covers value constraints (`[NotNull]`, `[Range]`) but not relational postconditions, and runs on a Roslyn fork. Nothing since `ccrewrite` lets a C# developer write `Ensures(Balance == Old(Balance) - amount)` and have it checked.
 
 **What it is not.** It is not an input-validation framework. Contract violations are bugs with blame attached (caller or callee); validation failures are expected runtime conditions. FluentValidation, DataAnnotations and guard clauses keep their jobs.
-
-## Landscape
-
-No current package does expression postconditions on .NET; the only living contracts product (Metalama) does value-constraint attributes, and everything else is preconditions or null-only.
-
-| Option | Status | Mechanism | Pre | Post | Invariants | `old()` | Inheritance | Gap it leaves |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [Code Contracts](https://github.com/microsoft/CodeContracts/issues/409) (Microsoft Research) | Dead; no .NET Core support, repo defunded \~2017 | `ccrewrite` IL rewriter + separate static checker | Expression | Expression | Yes | Yes | Yes | The whole feature set, with a mechanism that broke on each compiler release |
-| [Metalama.Patterns.Contracts](https://doc.postsharp.net/metalama/patterns/contracts) (PostSharp) | Active; MIT since 2025.1, v2026.1; IDE tooling commercial | Aspects on a Roslyn fork (Metalama.Compiler) | Attribute vocabulary (`[NotNull]`, `[Range]`, `[Regex]`…) | Same vocabulary on return / out / getters | Method run after each public method | No | No | Relational postconditions, `old()`, inheritance rules; requires their compiler fork |
-| [NullGuard.Fody](https://github.com/Fody/NullGuard) / RuntimeNullables.Fody | Active, small | Fody IL weaving | Null only | Null only on returns, out params, task results | No | No | No | Anything beyond nullness |
-| [MethodBoundaryAspect.Fody](https://github.com/vescon/MethodBoundaryAspect.Fody) | Active, small | Fody entry/exit hooks | Raw material | Raw material | No | No | No | Not a contracts library; a toolkit one could be built on |
-| Guard libraries: Ardalis.GuardClauses, CommunityToolkit `Guard`, Throw, [IOKode Ensuring](https://www.nuget.org/packages/IOKode.OpinionatedFramework.Generators.Ensuring) | Active | Imperative calls in the body | Yes | Only as an `if` at the bottom of your own method | No | No | No | Nothing declarative, nothing visible to callers |
-| BCL: NRT annotations, `ArgumentNullException.ThrowIfNull`, `[return: NotNull]` | Active, first-party | Compiler flow analysis + helpers | Null only, declarative | Null only, declarative | No | No | No | Microsoft did the null case properly and stopped |
-| JetBrains `[ContractAnnotation]` | Active | Static only, ReSharper/Rider | Hints | Hints | No | No | No | No runtime check at all |
-| Vogen, value objects | Active | Source generator | — | — | By construction, immutable only | — | — | Mutable types |
-| CsCheck, FsCheck | Active | Property-based testing | — | Properties written by hand | — | — | — | Not attached to the method; no reuse of the contract |
-| Dafny | Active (Microsoft Research / AWS) | Verified language compiling to C# | Proven | Proven | Proven | Yes | Yes | A different language, not contracts on C# |
-
-**Language-level attempts.** Stephen Toub's 2015 [Method Contracts proposal](https://github.com/dotnet/roslyn/issues/119) (`requires` / `ensures` / `return`) drew 259 comments and was closed; its csharplang successor [#105](https://github.com/dotnet/csharplang/issues/105) is open but the team has been unenthusiastic. The authoring API below stays close to that proposal's vocabulary so the library reads as a prototype of the language feature, not a competitor to it.
-
-**External reference design.** C++26 (completed March 2026) ships `pre`, `post`, `contract_assert` and four evaluation semantics — ignore, observe, enforce, quick-enforce — as a deliberate MVP, with virtual-function support deferred to C++29 ([P3850](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p3850r1.pdf)). This document borrows that vocabulary so .NET developers who follow C++ recognize it.
 
 ## Design principles
 
@@ -68,18 +47,6 @@ public decimal Withdraw(decimal amount)
 [Invariant]
 private void BalanceNeverNegative() => Pledge.Invariant(Balance >= 0);
 ```
-
-**MVP surface (static class `Pledge`, namespace `PledgeContracts`):**
-
-| Member | Meaning | Notes |
-| --- | --- | --- |
-| `Requires(bool condition, string? message = null)` | Precondition; blames the caller | Message auto-filled from the expression text via `[CallerArgumentExpression]` when omitted |
-| `Ensures(bool condition, string? message = null)` | Postcondition on normal return | May reference `Result<T>()`, `Old(...)`, parameters, fields |
-| `Result<T>()` | The return value inside an `Ensures` | Only legal in postconditions; type must match the method's return type (analyzer) |
-| `Old<T>(T expression)` | Value of the expression at method entry | Snapshot is taken before the body runs; expression must be side-effect free (analyzer) |
-| `EnsuresOnThrow<TException>(bool condition)` | Postcondition when the method exits via `TException` or a subtype | C++26 has no equivalent; Code Contracts did and it is useful for transactional invariants |
-| `ValueAtReturn(out T param)` | Final value of an `out` parameter in a postcondition | v1.0 |
-| `Invariant(bool condition)` | Object invariant, inside a method marked `[Invariant]` | Checked after every public method and setter completes (decorator and weaver modes); v1.0 |
 
 **Placement rules (enforced by analyzer):**
 
@@ -276,7 +243,7 @@ Replay this input with Seed = "0VtUVmxeZKh1" and Iterations = 1. CsCheck: 3 shri
 
 The registry is generated when `PledgeRegistry` is true, which is the default unless every contract kind is `Ignore`: probes are executable code, so an `Ignore` build stays byte-identical to one without Pledge. A test project that property-tests a Release build of its subject sets `<PledgeRegistry>true</PledgeRegistry>` (or a mode) in the subject. The xUnit adapter's `PledgeCase` serializes as its type and signature, so test explorers list each member at discovery; members without a probe appear as skipped tests with the reason.
 
-The seeded-bug check from the exit criteria lives in `tests/Pledge.Testing.Tests`: `RoundingAccount.Withdraw` rounds the amount to cents before taking it, every plausible unit test (whole cents) passes, and the property test fails on the first run with the postcondition and a shrunk amount (found Oct 29, 2026: random decimals have digits past the cents almost always, so the bug is found in the first few accepted samples).
+The seeded-bug check (MVP exit criterion 4) lives in `tests/Pledge.Testing.Tests`: `RoundingAccount.Withdraw` rounds the amount to cents before taking it, every plausible unit test (whole cents) passes, and the property test fails on the first run with the postcondition and a shrunk amount (found Oct 29, 2026: random decimals have digits past the cents almost always, so the bug is found in the first few accepted samples).
 
 **What this buys:**
 
@@ -317,122 +284,3 @@ The install experience and the overhead numbers are launch content, not aftertho
 **Debuggability.** Generated wrappers carry `#line` directives pointing violations at the contract's source line, and `[DebuggerStepThrough]` on the plumbing (the interceptor stubs, the checked body, its async continuation and the testing probes) so F11 lands in the user's method, not the shadow. Exception messages show the contract text, the member, and for preconditions the caller's file:line.
 
 **Templates and samples.** A `dotnet new` item template for a contracted service, a sample repo with a bank-account domain under contracts + the property-test bridge + a NativeAOT publish, and a BenchmarkDotNet project that produces the table above.
-
-## Scope: MVP, v1.0, later
-
-The MVP is the smallest thing that proves the authoring experience holds up in real code and that nobody else has: expression postconditions with `Old`, checked via interceptors, plus the property-test bridge.
-
-| Area | MVP (v0.1–0.3) | v1.0 | Later |
-| --- | --- | --- | --- |
-| Authoring | `Requires`, `Ensures`, `Result<T>`, `Old`, `EnsuresOnThrow` | `ValueAtReturn`, `Invariant` + `[Invariant]`, `[PledgeFor]` interface contracts, `Requires<TException>` | Constructors, iterators, local functions, lambdas, `ref` returns |
-| Targets | Instance/static methods, sync + `Task`/`Task<T>`/`ValueTask`/`ValueTask<T>` | Property get/set (decorator mode), generic methods per instantiation, records, structs | `IAsyncEnumerable`, `ref struct` members |
-| Execution | Interceptor mode | Generated DI decorators for interfaces; contract inheritance | Optional Fody weaver package (callee-side) |
-| Modes | `Ignore` / `Observe` / `Enforce` / `EnforceFailFast`, per-kind MSBuild properties | Per-assembly and per-type overrides via attributes | Runtime toggle for `Observe` sampling |
-| Analyzers | PLEDGE001–008 | PLEDGE010–020, cross-assembly metadata reading | SMT/range checking |
-| Metadata | `[Requires]`/`[Ensures]` text attributes | XML doc enrichment task | Markdown export CLI |
-| Testing bridge | Registry + CsCheck + xUnit/TUnit, stateless | FsCheck backend, stateful invariant sequences, counterexample snapshots | Coverage report: which contracts the test run exercised |
-| DX | Auto-wired build props, PLEDGE005, `#line` mapping, exception messages with contract text | `dotnet new` template, sample repo, benchmark suite published | Rider/VS tooltips via the metadata attributes |
-| Platforms | net10.0+, SDK 10+, C# 14+, NativeAOT clean | netstandard2.0 attributes-only package | — |
-
-**MVP exit criteria.** (1) The bank-account sample runs under `Enforce` with every contract exercised; (2) `Ignore` mode produces byte-identical IL; (3) NativeAOT publish is warning-free; (4) the property-test bridge finds a seeded bug the unit tests miss; (5) three external projects try it and the PLEDGE005 setup diagnostic fires zero times in anger.
-
-## Differentiators
-
-Six things no current option offers together; the first three are the headline, the rest are why teams stay.
-
-| Capability | This package | Metalama.Patterns.Contracts | Guard libraries | Code Contracts (historical) |
-| --- | --- | --- | --- | --- |
-| Expression postconditions (`Ensures(Balance == Old(Balance) - amount)`) | Yes | No — fixed attribute predicates on values | No | Yes |
-| `Old()` snapshots | Yes | No | No | Yes |
-| Contracts become property-based tests automatically | Yes | No | No | No |
-| Contract inheritance (Liskov rules enforced) | v1.0 | No | No | Yes |
-| Mechanism | Pure Roslyn: generator + interceptors + analyzers | Aspects on a Roslyn compiler fork | Plain calls | IL rewriter + VS extension |
-| Enforcement modes | ignore / observe / enforce / fail-fast, per kind, C++26 vocabulary | Enabled/disabled per kind | Always on | Several, via rewriter switches |
-| Zero cost when off | Byte-identical IL, verified | Aspect not applied | N/A | Rewriter removes |
-| NativeAOT / trimming | Clean by design | Supported | Yes | N/A |
-| Metadata visible to callers and docs | Text attributes + XML doc enrichment | Attributes (the predicates themselves) | None | Doc generator |
-| License | MIT, no commercial tier planned for the core | MIT core since 2025; IDE tooling commercial | MIT | MIT (dead) |
-| Setup | One package reference | Package + Metalama compiler | One package | Separate installer + VS extension |
-| Blame semantics in exception types | Pre / Post / Invariant exceptions | Pre: `ArgumentException`; Post: `PostconditionViolationException` | `ArgumentException` only | Configurable |
-
-**Positioning sentence.** *Pledge is Design by Contract for C#, the way C++26 just did it: write `Requires` and `Ensures` as ordinary code, get them checked in Debug, fuzzed in CI and documented in IntelliSense — with no rewriter, no compiler fork and no cost in Release.*
-
-**Where overlap is acceptable.** Value-constraint preconditions (`[NotNull]`, ranges) overlap with Metalama and the BCL; this package does them because a contracts library that can't say `amount > 0` is absurd, but it does not compete on breadth of validator attributes. Teams can use Metalama's vocabulary and this package's postconditions side by side.
-
-## Risks and mitigations
-
-| Risk | Likelihood | Impact | Mitigation |
-| --- | --- | --- | --- |
-| Interceptors change or are cut (still listed experimental in Roslyn) | Medium | High | Isolate behind one internal abstraction; decorator mode is a full fallback; EF and ASP.NET ship on interceptors, so breakage would hit Microsoft first |
-| Microsoft adds language contracts (C++26 may reopen csharplang #105) | Low–medium over 3 years | Medium | Mirror the proposal's vocabulary so migration is mechanical; position as the reference implementation the LDM can study; a language feature would still need the testing bridge and docs tooling |
-| Caller-side-only coverage surprises users ("my contract didn't fire") | High | Medium | PLEDGE006 warns when a contracted method has no interceptable callers; docs lead with the coverage table; decorator mode in v1.0; weaver package later |
-| `Old()` cost or reference-semantics confusion | Medium | Medium | PLEDGE007; snapshots only in enabled modes; docs example on the first page |
-| Impure contract expressions cause mode-dependent behavior | Medium | High | PLEDGE004 from day one; allow-list of pure BCL members; escalate to error in v1.0 |
-| Code Contracts PTSD: the community assumes "rewriter, slow, abandoned" | High | High | Never use the name; first README line says no IL, no fork, no VS extension; publish the byte-identical-IL CI check and the NativeAOT sample |
-| Metalama adds expression postconditions | Low–medium | Medium | They are constrained by attribute-based authoring on a compiler fork; the pure-Roslyn and PBT-bridge story stands regardless; collaboration is also an option |
-| Solo-maintainer bus factor deters enterprise adoption | Medium | Medium | Small, well-specified surface; this document as the spec; CI that proves the invariants above; accept early co-maintainers |
-| Generator performance on large solutions | Medium | Medium | Incremental generator with equatable models from the first commit; benchmark gate at 1,000 methods |
-| Trust (Moq precedent) | Low | Fatal if it happens | MIT, no telemetry, no build-time nag, reproducible builds, signed packages |
-
-## Non-goals
-
-- **Input validation.** No validator vocabulary beyond what contracts need, no model binding integration, no localization of messages for end users. FluentValidation and DataAnnotations stay.
-- **Static verification in MVP.** No proof, no SMT, no range analysis until the runtime story is solid; PLEDGE008 handles constants only.
-- **Runtime proxies.** No Castle DynamicProxy, no reflection-based interception; everything is compile time.
-- **Replacing NRT.** Null contracts are supported but the docs steer users to NRT for nullness and to this package for everything else.
-- **A commercial tier for the core.** If money is ever involved it is tooling or support around the package, never features withheld from it.
-- **Supporting .NET Framework, runtimes before .NET 10, or pre-C# 14 compilers.** The interceptor dependency and the support lifecycle make this impractical; the attributes-only package targets `netstandard2.0` so metadata can flow through older libraries.
-
-## Open questions and naming
-
-Decisions that change the API shape or the pitch and should be settled before the first public commit.
-
-**Decided (Oct 29, 2026): the name is Pledge.** Static class `Pledge`, namespace `PledgeContracts`. The class cannot share its name with a root namespace: C# binds a simple name to a namespace member before it consults using directives, so a `Pledge` namespace anywhere in a compilation would make `Pledge.Requires(...)` fail with CS0234. The plural-namespace, singular-class shape is the BCL's own (`System.Diagnostics.Contracts.Contract`, `System.Threading.Tasks.Task`). Consequences: no shipped assembly declares a namespace rooted at `Pledge` (a test enforces this), the generator emits into `PledgeContracts.Generated`, and package IDs keep the `Pledge` prefix while namespaces take `PledgeContracts` (`PledgeContracts.Testing`, `PledgeContracts.Testing.Xunit`, ...). Packages `Pledge` (runtime, generator, analyzers and code fixes; the Roslyn components are one `Pledge.Roslyn` assembly plus a `Pledge.Roslyn.CodeFixes` assembly, both under `analyzers/dotnet/cs`), `Pledge.Testing` with `Pledge.Testing.Xunit` and `Pledge.Testing.TUnit` adapters, `Pledge.Attributes` (`netstandard2.0`). Base exception `BrokenPledgeException`. Analyzer IDs use the `PLEDGE` prefix (decided Oct 29, 2026, replacing the earlier `DBC`): third-party analyzers carry their brand so an ID in a build log says which tool to look up, and a concept prefix is one any other contracts library could claim too. Rejected: `Contract` (BCL collision and the ccrewrite trap), Vow/Avow (vow-lang is a contracts-first language for AI agents in the same niche), Pact (contract testing), Covenant (.NET C2 framework), Bond (Microsoft Bond), Oath (sounds like OAuth).
-
-- [ ] **Static class name (resolved above; reasoning kept for the record).** `Contract.*` reads naturally and matches csharplang #105, but collides with `System.Diagnostics.Contracts.Contract` for anyone who imports both — and that class carries the ccrewrite booby trap. Options: keep `Contract` in a distinct namespace and ship an analyzer that flags the BCL one; or use a distinct short name (`Dbc.Requires`, `Spec.Ensures`). Recommendation: distinct name; the BCL collision is a support burden forever.
-- [ ] **Fail-fast vs throw default.** The csharplang thread fought this for years; C++26 made it a build mode. Recommendation: throw by default in `Enforce`, offer `EnforceFailFast`, document when each is right.
-- [ ] **Precondition exception mapping for public APIs.** Does `Requires(x != null)` throw `PreconditionViolationException` or `ArgumentNullException`? Recommendation: the former by default, `Requires<ArgumentNullException>` opt-in, plus PLEDGE013 steering people to `ThrowIfNull` for the null case.
-- [ ] **Interceptor abstraction boundary.** How much of the interceptor plumbing to hide so decorator mode can share the lifted predicates — settle before writing the generator.
-- [ ] **`Old()` of reference types.** Shallow reference by default with PLEDGE007, or refuse without an explicit copy? Recommendation: allow + warn in MVP; revisit with user feedback.
-- [ ] **Async cancellation semantics.** Skip postconditions on `OperationCanceledException` by default, or treat cancellation as a normal exit?
-- [x] **Minimum C# version.** Decided (Oct 29, 2026): C# 14 on the .NET 10 SDK, runtime floor `net10.0`. .NET 8 leaves support in November 2026 and .NET 9 already has, so 13 would not widen adoption at launch.
-- [ ] **Scope of the attributes-only package.** Exactly which attributes ship in the `netstandard2.0` package so libraries can carry contract metadata without the runtime.
-
-**Names considered** (before publishing, confirm with `dotnet package search Pledge --exact-match`, the GitHub org and the domain):
-
-| Candidate | Outcome | Notes |
-| --- | --- | --- |
-| **Pledge** | **Chosen** | One syllable, unambiguous aloud, `BrokenPledgeException`; only collisions are OpenBSD `pledge(2)` and fundraising software |
-| Vow / Avow | Rejected | [vow-lang.com](https://vow-lang.com) is a verified language with `requires`/`ensures`/`invariant` and blame semantics — the same niche and the same AI-code pitch |
-| Proviso | Runner-up | Exact meaning (a condition attached to an agreement), no collisions; three syllables and a spelling people fumble |
-| Treaty | Runner-up | Two-party framing; `TreatyViolationException` reads naturally |
-| Swear | Considered | Funniest option; SEO and corporate-filter risk |
-| Stipulate | Considered | Serious tone; forces a verb-only API shape |
-| Contract | Rejected | `System.Diagnostics.Contracts.Contract` collision and the ccrewrite booby trap |
-| Pact, Covenant, Bond, Oath, Vouch, FinePrint | Rejected | Existing developer-space projects or products, or confusable aloud |
-
-## Launch plan: building the following
-
-The package is the content; each milestone below is both a release and a post that .NET developers will share without being sold anything.
-
-1. **Spec first, in public.** Publish this document (trimmed) as the repo's `DESIGN.md` before code, and post it to r/dotnet and the csharplang #105 thread asking for holes. Early critics become early users.
-2. **MVP release + "Code Contracts died for a reason; here's the version that can't"** — the retrospective post: what killed ccrewrite, what C++26 did, what interceptors change. Show HN, r/csharp, Lobsters.
-3. **The byte-identical-IL proof** — a short post with the CI check and the NativeAOT publish. This is the credibility post for architects.
-4. **The property-test bridge demo** — seed a bug in the bank-account sample that unit tests miss and let the contracts find it. This is the post that gets shared.
-5. **"Contracts for AI-written code"** — the workflow post: you write `Requires`/`Ensures`, the model writes the body, the bridge checks it. Timely, and the one most likely to escape the .NET bubble.
-6. **Conference talks** — NDC, .NET Conf community track, DevSum/Update: "What C++26 contracts mean for C#." The talk is the spec with a demo.
-7. **Interop with the ecosystem** — PR a `[Pure]` allow-list entry for popular libraries, a CsCheck integration upstream, a Metalama compatibility note. Each is a mention in someone else's changelog.
-
-**Success metrics for the first six months:** 500 GitHub stars; three unaffiliated projects using it in CI; one external contributor landing an analyzer rule; the csharplang thread referencing it; zero PLEDGE005 reports from the setup path.
-
-## Sources
-
-- [Microsoft/CodeContracts issue #409 — project status and .NET Core](https://github.com/microsoft/CodeContracts/issues/409)
-- [Code Contracts documentation (Microsoft Learn)](https://learn.microsoft.com/en-us/dotnet/framework/debug-trace-profile/code-contracts)
-- [Maintaining ccrewrite against Roslyn (Habr)](https://habr.com/en/post/263235/)
-- [dotnet/roslyn #119 — Method Contracts proposal (2015)](https://github.com/dotnet/roslyn/issues/119) · [dotnet/csharplang #105](https://github.com/dotnet/csharplang/issues/105)
-- [Roslyn Language Feature Status (interceptors: experimental)](https://github.com/dotnet/roslyn/blob/main/docs/Language%20Feature%20Status.md)
-- [WG21 P3850 — contracts after C++26](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2026/p3850r1.pdf) · [C++26 contract modes](https://wrocpp.github.io/toolset/contracts-2026/)
-- [Metalama Contracts documentation](https://doc.postsharp.net/metalama/patterns/contracts) · [Metalama.Patterns.Contracts on NuGet](https://feed.nuget.org/packages/Metalama.Patterns.Contracts/) · [Metalama 2025.1 licensing](https://blog.postsharp.net/metalama-2025-1)
-- [NullGuard.Fody](https://github.com/Fody/NullGuard) · [MethodBoundaryAspect.Fody](https://github.com/vescon/MethodBoundaryAspect.Fody/commit/b602bdf835da08bdd5edeb158b9aba6d1d8abdc5)
-- [IOKode.OpinionatedFramework.Ensuring](https://www.nuget.org/packages/IOKode.OpinionatedFramework.Generators.Ensuring)

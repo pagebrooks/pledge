@@ -17,7 +17,7 @@ clauses keep their jobs.
 > contracts, misused `Result`/`Old`, impure expressions, mutable `Old` snapshots, constant arguments
 > that break a precondition, and calls the contracts do not reach. The testing bridge turns the same contracts into property-based tests
 > with CsCheck, through xUnit or TUnit.
-> The full design, semantics and roadmap are in [DESIGN.md](DESIGN.md).
+> The full design and semantics are in [DESIGN.md](DESIGN.md).
 
 ```sh
 dotnet add package Pledge --prerelease
