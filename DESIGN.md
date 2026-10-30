@@ -84,8 +84,8 @@ private void BalanceNeverNegative() => Pledge.Invariant(Balance >= 0);
 **Placement rules (enforced by analyzer):**
 
 - Pledge calls must be the first statements of the body, before any other code. Anything after the first non-contract statement is a diagnostic, not silently ignored.
-- `Requires` before `Ensures` before `EnsuresOnThrow`, by convention; the analyzer offers a fix to reorder.
-- Contract expressions must be pure: no assignments, no `await`, no calls to methods not marked `[Pure]` or known-pure BCL members. Violations are a warning in MVP, an error in v1.0.
+- `Requires` before `Ensures` before `EnsuresOnThrow`, by convention. The generator accepts any order; a reordering fix is not in MVP (Oct 29, 2026).
+- Contract expressions must be pure: no assignments, no `await`, no calls to methods not marked `[Pure]` or known-pure BCL members. Violations are a warning in MVP, an error in v1.0. Property and field reads are taken as pure, operators and the members of `object` and the comparison interfaces too; the BCL allow-list covers `System.Linq`, `System.Numerics`, the immutable and frozen collections, `Math`, `string`, the primitives, dates and the query-shaped members of the collections (`Contains`, `TryGetValue`, `IndexOf`, ...). Everything else needs `[Pure]`, and the fix adds it.
 - Supported targets in MVP: instance and static methods (sync and `async Task` / `Task<T>` / `ValueTask` / `ValueTask<T>`). Property accessors are not invocations, so interceptors cannot reach them (found Oct 29, 2026); contracts on properties arrive with decorator mode in v1.0, and until then the generator reports PLEDGE009 on them. Constructors, iterators, local functions, lambdas and `ref` returns are v1.0 or later.
 
 **Interface and abstract contracts (v1.0).** Interface members have no body, so their contracts live in a sibling class marked `[PledgeFor(typeof(IAccount))]` with mirroring signatures, following the Code Contracts and csharplang #105 pattern. Implementations inherit them automatically in decorator mode.
@@ -214,15 +214,17 @@ The analyzer is what makes the library feel like a language feature instead of a
 
 | ID | Severity | Rule | Fix | Ships in |
 | --- | --- | --- | --- | --- |
-| PLEDGE001 | Error | Contract call after a non-contract statement | Move to top | MVP |
-| PLEDGE002 | Error | `Result<T>()` outside `Ensures`, or in a `void` method, or `T` ≠ return type | — | MVP |
-| PLEDGE003 | Error | `Old(...)` outside a postcondition | — | MVP |
-| PLEDGE004 | Warning | Impure expression in a contract (assignment, `await`, non-`[Pure]` call) | — | MVP |
-| PLEDGE005 | Warning | Generator not active: contracts compile to no-ops (missing package reference, `InterceptorsNamespaces` not set, unsupported language version) | Add build property | MVP |
-| PLEDGE006 | Info | Contracted method has no interceptable call sites in this compilation (checks will never run here) | Suggest decorator mode | MVP |
-| PLEDGE007 | Warning | `Old` of a mutable reference type without an explicit copy | Wrap in `.ToArray()` etc. | MVP |
-| PLEDGE008 | Warning | Call site passes a constant that violates a precondition (`Withdraw(-5)`) | — | MVP (constants only) |
+| PLEDGE001 | Error | Contract call anywhere but the top of a method body: after another statement, or nested in one | Move to top (when it reads no local declared above it) | MVP |
+| PLEDGE002 | Error | `Result<T>()` outside `Ensures`, inside `Old`, in `EnsuresOnThrow`, in a method that returns nothing, or with `T` ≠ the result type | Use `Result<T>()` with the method's result type | MVP |
+| PLEDGE003 | Error | `Old(...)` outside `Ensures`/`EnsuresOnThrow` | — | MVP |
+| PLEDGE004 | Warning | Impure expression in a contract (assignment, increment, `await`, `ref`/`out` argument, non-`[Pure]` call, delegate invocation) | Mark the callee `[Pure]` when it is declared in the solution | MVP |
+| PLEDGE005 | Warning | Generator not active: contracts compile to no-ops (`InterceptorsNamespaces` lacks the generator's namespace) | None possible in Roslyn, since the property lives in MSBuild. `Pledge.targets` appends the namespace after the project file and a build target fails with the line to add when something later replaced it, so PLEDGE005 itself is reached only when the package's build assets are excluded | MVP |
+| PLEDGE006 | Info | Contracted method has no interceptable call sites in this compilation (checks will never run here) | — until decorator mode exists | MVP |
+| PLEDGE007 | Warning | `Old` of a mutable reference type without an explicit copy, unless the snapshot is only compared by identity | `.ToArray()` for sequences, `with { }` for records | MVP |
+| PLEDGE008 | Warning | Call site passes constants that violate a precondition (`Withdraw(-5)`); three-valued evaluation of comparisons, `&&`/`\|\|`/`!`, patterns, `string.Length` and `IsNullOrEmpty`, everything else unknown | — | MVP (constants only; preconditions from this compilation) |
 | PLEDGE009 | Warning | Contract on a member the generator cannot intercept yet (generic, struct, extension, private or protected member, `base`/local function in the expression, ...): its contracts compile to no-ops | — | MVP |
+
+PLEDGE005, PLEDGE006 and PLEDGE009 are reported by the generator, which is the component that knows whether a wrapper was produced; the rest are `DiagnosticAnalyzer`s in the same assembly. When PLEDGE002 or PLEDGE003 fires, the generator emits nothing for that method and stays silent, so one mistake produces one error.
 | PLEDGE010 | Error | Override or interface implementation adds a precondition the base lacks | Remove or mark `[Weakens]` | v1.0 |
 | PLEDGE011 | Warning | Override's postcondition is weaker than base (heuristic: base `Ensures` not implied) | — | v1.0 |
 | PLEDGE012 | Warning | Public method on a type with invariants is `[DoNotCheckInvariants]` without comment | — | v1.0 |
@@ -269,7 +271,7 @@ The generator emits a declarative view of every contract so consumers in other a
 
 The install experience and the overhead numbers are launch content, not afterthoughts; both get measured and published.
 
-**Install.** One package reference. The package's `build/*.props` appends the generator's namespace to `InterceptorsNamespaces` and sets `LangVersion` guidance; PLEDGE005 catches the cases it can't fix (older SDKs, a project that overrides the property). Target: zero manual steps on .NET 10+ with the .NET 10+ SDK.
+**Install.** One package reference. The package's `build/Pledge.targets` appends the generator's namespace to `InterceptorsNamespaces`; it is a targets file rather than props so a project that sets the property for its own interceptors does not overwrite it (found Oct 29, 2026). A target fails the build with the line to add if an import after it still replaced the property, and PLEDGE005 catches what MSBuild cannot see, such as `ExcludeAssets="build"`. Target: zero manual steps on .NET 10+ with the .NET 10+ SDK.
 
 **Supported matrix (MVP).** Runtime `net10.0`+ for the runtime package (`netstandard2.0` for the attributes-only package so libraries can carry metadata without taking a runtime dependency); SDK 10+ for the generator; C# 14+. .NET 8 leaves support in November 2026 and .NET 9 already has, so a lower floor buys nothing at launch. The interceptor API surface is wrapped behind one internal abstraction so a change to the experimental feature is a one-file fix.
 

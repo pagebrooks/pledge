@@ -41,6 +41,8 @@ public sealed class MisplacedContractTests
                     Pledge.Requires(x > 0);
                     return x;
                 }
+
+                public int Call() => M(1);
             }
             """);
 

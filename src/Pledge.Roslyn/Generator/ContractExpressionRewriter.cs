@@ -8,8 +8,9 @@ namespace PledgeContracts.Roslyn.Generator;
 // parameter named @this and none of the author's usings apply: implicit instance members become @this.Member,
 // static members and types are spelled out with global::, parameters and lambda locals stay as they are.
 // Pledge.Result<T>() becomes the __result local and Pledge.Old(x) becomes a snapshot local taken before the body.
-// Anything the wrapper cannot do (private members, Result where there is none) is recorded as a problem instead
-// of generating code that does not compile.
+// Anything the wrapper cannot do (private members, a type it cannot name) is recorded as a problem that the
+// generator reports as PLEDGE009. Misuse of Result and Old is the analyzers' error (PLEDGE002, PLEDGE003); the
+// rewriter only notes it in HasErrors so no wrapper is emitted for the method.
 internal sealed class ContractExpressionRewriter(
     SemanticModel model,
     INamedTypeSymbol pledgeType,
@@ -24,6 +25,8 @@ internal sealed class ContractExpressionRewriter(
     private bool _insideOld;
 
     public ContractKind Kind { get; set; }
+
+    public bool HasErrors { get; private set; }
 
     public string Lift(ExpressionSyntax expression) => Visit(expression)!.NormalizeWhitespace().ToFullString();
 
@@ -64,25 +67,12 @@ internal sealed class ContractExpressionRewriter(
 
     private IdentifierNameSyntax RewriteResult(InvocationExpressionSyntax node, IMethodSymbol method)
     {
-        if (_insideOld)
+        if (_insideOld
+            || Kind != ContractKind.Postcondition
+            || resultType is null
+            || (method.TypeArguments.Length == 1 && !SymbolEqualityComparer.Default.Equals(method.TypeArguments[0], resultType)))
         {
-            problems.Add("Pledge.Result<T>() cannot appear inside Pledge.Old(...): there is no result yet when the snapshot is taken");
-        }
-        else if (Kind == ContractKind.PostconditionOnThrow)
-        {
-            problems.Add("Pledge.Result<T>() has no value when the member throws, so it cannot appear in Pledge.EnsuresOnThrow");
-        }
-        else if (Kind != ContractKind.Postcondition)
-        {
-            problems.Add("Pledge.Result<T>() is only meaningful in Pledge.Ensures");
-        }
-        else if (resultType is null)
-        {
-            problems.Add("Pledge.Result<T>() cannot be used on a method that returns nothing");
-        }
-        else if (method.TypeArguments.Length == 1 && !SymbolEqualityComparer.Default.Equals(method.TypeArguments[0], resultType))
-        {
-            problems.Add($"Pledge.Result<T>() must name the method's result type: Result<{resultType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}>()");
+            HasErrors = true;
         }
 
         return _result.WithTriviaFrom(node);
@@ -92,7 +82,7 @@ internal sealed class ContractExpressionRewriter(
     {
         if (Kind == ContractKind.Precondition)
         {
-            problems.Add("Pledge.Old(...) is only meaningful in a postcondition");
+            HasErrors = true;
         }
 
         if (node.ArgumentList.Arguments.Count != 1)

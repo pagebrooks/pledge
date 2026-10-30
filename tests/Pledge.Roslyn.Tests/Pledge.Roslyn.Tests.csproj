@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <!-- The harness compiles snippets against the real runtime assemblies and runs the generated code. -->
+    <!--
+      The harnesses compile snippets against the running runtime's assemblies, run the generated code, and drive the
+      analyzers and code fixes through CompilationWithAnalyzers and an AdhocWorkspace. No reference-assembly
+      downloads, so the tests behave the same offline and in CI.
+    -->
     <ProjectReference Include="../../src/Pledge/Pledge.csproj" />
     <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" />
     <ProjectReference Include="../../src/Pledge.Roslyn.CodeFixes/Pledge.Roslyn.CodeFixes.csproj" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 
 </Project>

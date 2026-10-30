@@ -2,13 +2,11 @@
 
   <!--
     NuGet imports this into every project that references the Pledge package, before the project file.
-    It registers the namespace the generator emits interceptors into, so the compiler accepts them
-    (SDK 10+, C# 14+). This is the one setup step the package exists to remove; analyzer PLEDGE005
-    reports the cases where this import did not take effect. Pledge.targets, imported after the
-    project file, picks the enforcement mode.
+    Nothing is set here on purpose: a property set in a .props file is overwritten by the same property
+    in the project file, which is how a consumer's own <InterceptorsNamespaces> used to wipe out the
+    generator's namespace and trigger PLEDGE005. Everything the package needs lives in Pledge.targets,
+    which is imported after the project file. This file stays so defaults a project is meant to
+    override have a home when one is needed.
   -->
-  <PropertyGroup>
-    <InterceptorsNamespaces>$(InterceptorsNamespaces);PledgeContracts.Generated</InterceptorsNamespaces>
-  </PropertyGroup>
 
 </Project>

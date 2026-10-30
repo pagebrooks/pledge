@@ -18,23 +18,31 @@ internal static class GeneratorHarness
     private static readonly Lazy<ImmutableArray<MetadataReference>> _references = new(LoadReferences);
     private static int _assemblyCounter;
 
-    public static GeneratorRun Run(string source, string mode = "Enforce", bool interceptorsEnabled = true, string? metadata = null, params string[] extraSources)
+    public static ImmutableArray<MetadataReference> References => _references.Value;
+
+    public static CSharpCompilationOptions CompilationOptions { get; } = new(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable);
+
+    public static CSharpParseOptions ParseOptions(bool interceptorsEnabled = true)
     {
         var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
-        if (interceptorsEnabled)
-        {
-            parseOptions = parseOptions.WithFeatures([new KeyValuePair<string, string>(PledgeGenerator.InterceptorsFeature, "PledgeContracts.Generated")]);
-        }
+        return interceptorsEnabled
+            ? parseOptions.WithFeatures([new KeyValuePair<string, string>(PledgeGenerator.InterceptorsFeature, "PledgeContracts.Generated")])
+            : parseOptions;
+    }
 
-        var trees = new[] { source }.Concat(extraSources)
+    public static CSharpCompilation CreateCompilation(IEnumerable<string> sources, CSharpParseOptions parseOptions)
+    {
+        var trees = sources
             .Select((text, index) => CSharpSyntaxTree.ParseText(text, parseOptions, path: $"/project/Source{index}.cs"))
             .ToArray();
 
-        var compilation = CSharpCompilation.Create(
-            "PledgeSnippet" + Interlocked.Increment(ref _assemblyCounter),
-            trees,
-            _references.Value,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+        return CSharpCompilation.Create("PledgeSnippet" + Interlocked.Increment(ref _assemblyCounter), trees, _references.Value, CompilationOptions);
+    }
+
+    public static GeneratorRun Run(string source, string mode = "Enforce", bool interceptorsEnabled = true, string? metadata = null, params string[] extraSources)
+    {
+        var parseOptions = ParseOptions(interceptorsEnabled);
+        var compilation = CreateCompilation(new[] { source }.Concat(extraSources), parseOptions);
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             [new PledgeGenerator().AsSourceGenerator()],

@@ -126,8 +126,14 @@ public sealed class PledgeGenerator : IIncrementalGenerator
         {
             context.CancellationToken.ThrowIfCancellationRequested();
 
-            if (method.Problems.Count > 0 || !sitesByMethod.TryGetValue(method.Key, out var sites))
+            if (!method.IsGenerable)
             {
+                continue;
+            }
+
+            if (!sitesByMethod.TryGetValue(method.Key, out var sites))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Diagnostics.NoCallSites, method.Site.ToLocation(), method.MethodName));
                 continue;
             }
 

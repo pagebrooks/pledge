@@ -6,6 +6,12 @@
   <PropertyGroup>
     <!-- Explicit, because CI builds Release and the default there is Ignore. -->
     <PledgeMode>Enforce</PledgeMode>
+    <!--
+      A consumer with interceptors of its own sets this in the project file. Pledge.targets must append its
+      namespace after this, or every contract would compile to nothing; the generated checks these tests
+      exercise are the proof that it does.
+    -->
+    <InterceptorsNamespaces>Integration.OwnInterceptors</InterceptorsNamespaces>
   </PropertyGroup>
 
   <ItemGroup>

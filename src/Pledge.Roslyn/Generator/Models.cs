@@ -88,9 +88,13 @@ internal sealed record ContractedMethod(
     EquatableArray<ContractModel> Contracts,
     EquatableArray<SnapshotModel> Snapshots,
     EquatableArray<string> Problems,
+    bool HasErrors,
     SourceSite Site)
 {
     public bool HasResult => ResultType is not null;
+
+    // Nothing is generated for a method the analyzers reject or the generator cannot handle.
+    public bool IsGenerable => Problems.Count == 0 && !HasErrors;
 
     // Postconditions and snapshots need the original call inside a try block; preconditions alone just forward.
     public bool WrapsBody => Snapshots.Count > 0 || Contracts.Any(contract => contract.Kind != ContractKind.Precondition);

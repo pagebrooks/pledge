@@ -14,7 +14,7 @@ internal static class MetadataEmitter
         var builder = new StringBuilder();
         var any = false;
 
-        foreach (var method in methods.Where(method => method.Problems.Count == 0).OrderBy(method => method.ContainingType, StringComparer.Ordinal).ThenBy(method => method.Signature, StringComparer.Ordinal))
+        foreach (var method in methods.Where(method => method.IsGenerable).OrderBy(method => method.ContainingType, StringComparer.Ordinal).ThenBy(method => method.Signature, StringComparer.Ordinal))
         {
             var target = $"typeof({method.ContainingType}), {Literal(method.Signature)}";
             foreach (var contract in method.Contracts)

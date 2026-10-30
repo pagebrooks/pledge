@@ -12,6 +12,15 @@
     <PledgeMetadata Condition="'$(PledgeMetadata)' == ''">true</PledgeMetadata>
   </PropertyGroup>
 
+  <!--
+    The compiler accepts interceptors only from namespaces listed here. Appended after the project file so a
+    project that sets InterceptorsNamespaces for its own generators keeps Pledge's namespace too; the condition
+    keeps it from being listed twice. This is the one setup step the package exists to remove.
+  -->
+  <PropertyGroup Condition="!$(InterceptorsNamespaces.Contains('PledgeContracts.Generated'))">
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);PledgeContracts.Generated</InterceptorsNamespaces>
+  </PropertyGroup>
+
   <ItemGroup>
     <CompilerVisibleProperty Include="PledgeMode" />
     <CompilerVisibleProperty Include="PledgeMetadata" />
@@ -21,6 +30,17 @@
     <Error
       Condition="'$(PledgeMode)' != 'Ignore' and '$(PledgeMode)' != 'Observe' and '$(PledgeMode)' != 'Enforce' and '$(PledgeMode)' != 'EnforceFailFast'"
       Text="PledgeMode '$(PledgeMode)' is not recognized. Use Ignore, Observe, Enforce or EnforceFailFast." />
+  </Target>
+
+  <!--
+    Targets run after every import, so this sees the final value. It fails only when something imported after this
+    file (a Directory.Build.targets, for instance) replaced the property instead of appending to it. The generator's
+    PLEDGE005 covers what this cannot see, such as a package reference with ExcludeAssets="build".
+  -->
+  <Target Name="PledgeValidateInterceptors" BeforeTargets="CoreCompile" Condition="'$(PledgeMode)' != 'Ignore'">
+    <Error
+      Condition="!$(InterceptorsNamespaces.Contains('PledgeContracts.Generated'))"
+      Text="InterceptorsNamespaces does not contain PledgeContracts.Generated, so the compiler would reject Pledge's generated checks. Something imported after Pledge.targets replaced the property; append to it instead: &lt;InterceptorsNamespaces&gt;%24(InterceptorsNamespaces);PledgeContracts.Generated&lt;/InterceptorsNamespaces&gt;" />
   </Target>
 
 </Project>

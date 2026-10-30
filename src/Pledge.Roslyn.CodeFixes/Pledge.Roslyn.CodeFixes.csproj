@@ -18,6 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Shared with Pledge.Roslyn as source: the ids the fixes answer to and the syntax test for a contract statement. -->
+    <Compile Include="../Pledge.Roslyn/DiagnosticIds.cs" Link="Shared/DiagnosticIds.cs" />
+    <Compile Include="../Pledge.Roslyn/Generator/ContractSyntax.cs" Link="Shared/ContractSyntax.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Pledge.Roslyn.Tests" />
   </ItemGroup>
 

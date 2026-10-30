@@ -26,7 +26,7 @@ internal static class ContractSyntax
         return false;
     }
 
-    private static string? NameOf(ExpressionSyntax expression) => expression switch
+    public static string? NameOf(ExpressionSyntax expression) => expression switch
     {
         MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
         SimpleNameSyntax simpleName => simpleName.Identifier.ValueText,

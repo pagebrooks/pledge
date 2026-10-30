@@ -11,7 +11,9 @@ clauses keep their jobs.
 > **Status: pre-alpha.** The snippet below works today: `Requires`, `Ensures` with `Result<T>()`
 > and `Old()`, and `EnsuresOnThrow` on sync and async methods, checked through the source
 > generator and interceptors, with the enforcement modes, blame with file and line, assembly
-> metadata and a Native AOT sample. Analyzers, code fixes and the testing bridge are next.
+> metadata and a Native AOT sample. Analyzers PLEDGE001-PLEDGE009 with code fixes catch misplaced
+> contracts, misused `Result`/`Old`, impure expressions, mutable `Old` snapshots and constant arguments
+> that break a precondition. The testing bridge is next.
 > The full design, semantics and roadmap are in [DESIGN.md](DESIGN.md).
 
 ## What it looks like
@@ -56,13 +58,14 @@ Precondition of Account.Withdraw violated by its caller: insufficient funds [amo
 
 | Path | Package | Purpose |
 | --- | --- | --- |
-| `src/Pledge` | `Pledge` | Runtime: the `Pledge` static class (namespace `PledgeContracts`), `PledgeRuntime`, violation exceptions. Ships the generator, analyzers and code fixes in `analyzers/dotnet/cs` and wires `InterceptorsNamespaces` through `build/Pledge.props`. |
-| `src/Pledge.Roslyn` | (inside `Pledge`) | Compiler side: the incremental generator and analyzers PLEDGE001-PLEDGE008 in one assembly, since they share the contract-reading code. |
+| `src/Pledge` | `Pledge` | Runtime: the `Pledge` static class (namespace `PledgeContracts`), `PledgeRuntime`, violation exceptions. Ships the generator, analyzers and code fixes in `analyzers/dotnet/cs` and wires `InterceptorsNamespaces` through `build/Pledge.targets`. |
+| `src/Pledge.Roslyn` | (inside `Pledge`) | Compiler side: the incremental generator and analyzers PLEDGE001-PLEDGE009 in one assembly, since they share the contract-reading code. |
 | `src/Pledge.Attributes` | `Pledge.Attributes` | `netstandard2.0` metadata attributes so libraries can carry contract metadata without the runtime. |
 | `src/Pledge.Roslyn.CodeFixes` | (inside `Pledge`) | Code fixes, apart from the analyzers because they need Microsoft.CodeAnalysis.Workspaces. |
 | `src/Pledge.Testing` | `Pledge.Testing` | Contracts as property-based test oracles, CsCheck backend. |
 | `src/Pledge.Testing.Xunit` | `Pledge.Testing.Xunit` | xUnit.net v3 adapter. |
 | `src/Pledge.Testing.TUnit` | `Pledge.Testing.TUnit` | TUnit adapter. |
+| `docs/rules` | | One page per PLEDGE diagnostic, linked from the diagnostics themselves. |
 | `tests/` | | xUnit v3 test projects, one per area. `Pledge.Integration.Tests` consumes the generator the way a package consumer does. |
 | `samples/BankAccount` | | The bank-account domain under contracts. |
 

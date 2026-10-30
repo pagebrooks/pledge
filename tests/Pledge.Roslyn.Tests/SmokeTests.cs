@@ -10,5 +10,5 @@ public sealed class SmokeTests
 
     [Fact]
     public void Code_fix_assembly_is_referenced() =>
-        Assert.Equal("Pledge.Roslyn.CodeFixes", typeof(CodeFixes.Placeholder).Assembly.GetName().Name);
+        Assert.Equal("Pledge.Roslyn.CodeFixes", typeof(CodeFixes.MoveContractToTopCodeFixProvider).Assembly.GetName().Name);
 }

@@ -287,14 +287,13 @@ public sealed class PostconditionGenerationTests
     }
 
     [Theory]
-    [InlineData("public int M(int x) { Pledge.Ensures(Pledge.Result<string>() != null); return x; }", "must name the method's result type: Result<int>()")]
-    [InlineData("public void M(int x) { Pledge.Ensures(Pledge.Result<int>() > 0); }", "returns nothing")]
-    [InlineData("public int M(int x) { Pledge.Requires(Pledge.Old(x) > 0); return x; }", "Old(...) is only meaningful in a postcondition")]
-    [InlineData("public int M(int x) { Pledge.Requires(Pledge.Result<int>() > 0); return x; }", "only meaningful in Pledge.Ensures")]
-    [InlineData("public int M(int x) { Pledge.EnsuresOnThrow<System.Exception>(Pledge.Result<int>() > 0); return x; }", "has no value when the member throws")]
-    [InlineData("public int M(int x) { Pledge.Ensures(Pledge.Old(Pledge.Result<int>()) > 0); return x; }", "cannot appear inside Pledge.Old")]
-    [InlineData("public async void M(int x) { Pledge.Ensures(x > 0); await System.Threading.Tasks.Task.Yield(); }", "async void methods cannot carry postconditions")]
-    public void Misused_Result_and_Old_report_PLEDGE009(string member, string expectedProblem)
+    [InlineData("public int M(int x) { Pledge.Ensures(Pledge.Result<string>() != null); return x; }")]
+    [InlineData("public void M(int x) { Pledge.Ensures(Pledge.Result<int>() > 0); }")]
+    [InlineData("public int M(int x) { Pledge.Requires(Pledge.Old(x) > 0); return x; }")]
+    [InlineData("public int M(int x) { Pledge.Requires(Pledge.Result<int>() > 0); return x; }")]
+    [InlineData("public int M(int x) { Pledge.EnsuresOnThrow<System.Exception>(Pledge.Result<int>() > 0); return x; }")]
+    [InlineData("public int M(int x) { Pledge.Ensures(Pledge.Old(Pledge.Result<int>()) > 0); return x; }")]
+    public void Misused_Result_and_Old_generate_nothing_and_are_left_to_the_analyzer(string member)
     {
         var run = GeneratorHarness.Run($$"""
             using PledgeContracts;
@@ -308,9 +307,28 @@ public sealed class PostconditionGenerationTests
             """);
 
         run.AssertCompiles();
+        Assert.Empty(run.GeneratorDiagnostics);
+        Assert.Empty(run.GeneratedSources);
+    }
+
+    [Fact]
+    public void Async_void_with_postconditions_reports_PLEDGE009()
+    {
+        var run = GeneratorHarness.Run("""
+            using PledgeContracts;
+
+            public sealed class Holder
+            {
+                public async void M(int x) { Pledge.Ensures(x > 0); await System.Threading.Tasks.Task.Yield(); }
+
+                public void Call() => M(1);
+            }
+            """);
+
+        run.AssertCompiles();
         var diagnostic = Assert.Single(run.GeneratorDiagnostics);
         Assert.Equal("PLEDGE009", diagnostic.Id);
-        Assert.Contains(expectedProblem, diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Contains("async void methods cannot carry postconditions", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
         Assert.Empty(run.Wrappers);
     }
 

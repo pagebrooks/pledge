@@ -1,3 +1,6 @@
+// These tests break contracts on purpose; PLEDGE008 would otherwise flag every constant that trips a precondition.
+#pragma warning disable PLEDGE008
+
 using System.Runtime.CompilerServices;
 
 namespace PledgeContracts.Integration.Tests;

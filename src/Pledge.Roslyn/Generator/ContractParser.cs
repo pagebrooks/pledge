@@ -111,11 +111,12 @@ internal static class ContractParser
             Contracts: contracts.ToEquatableArray(),
             Snapshots: snapshots.ToEquatableArray(),
             Problems: problems.Distinct().ToEquatableArray(),
+            HasErrors: rewriter.HasErrors,
             Site: SourceSite.Of(declaration.Identifier.Parent ?? declaration));
     }
 
     // What the wrapper awaits, if anything, and the type Result<T>() stands for.
-    private static (AsyncKind Kind, ITypeSymbol? ResultType) Classify(IMethodSymbol method, Compilation compilation)
+    public static (AsyncKind Kind, ITypeSymbol? ResultType) Classify(IMethodSymbol method, Compilation compilation)
     {
         if (method.ReturnsVoid)
         {
@@ -150,7 +151,7 @@ internal static class ContractParser
             SymbolEqualityComparer.Default.Equals(candidate, compilation.GetTypeByMetadataName(metadataName));
     }
 
-    private static ExpressionSyntax? Argument(InvocationExpressionSyntax invocation, IMethodSymbol method, string parameterName)
+    public static ExpressionSyntax? Argument(InvocationExpressionSyntax invocation, IMethodSymbol method, string parameterName)
     {
         var arguments = invocation.ArgumentList.Arguments;
         foreach (var argument in arguments)

@@ -302,13 +302,28 @@ public sealed class RequiresGenerationTests
     }
 
     [Fact]
-    public void Methods_without_call_sites_get_no_wrapper()
+    public void Methods_without_call_sites_get_no_wrapper_and_report_PLEDGE006()
     {
         var run = GeneratorHarness.Run(Account);
 
         run.AssertCompiles();
         Assert.Empty(run.Wrappers);
-        Assert.Empty(run.GeneratorDiagnostics);
+        var diagnostic = Assert.Single(run.GeneratorDiagnostics);
+        Assert.Equal("PLEDGE006", diagnostic.Id);
+        Assert.Equal(DiagnosticSeverity.Info, diagnostic.Severity);
+        Assert.Contains("'Withdraw' is not called from this compilation", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
+        Assert.Equal(11, diagnostic.Location.GetLineSpan().StartLinePosition.Line + 1);
+    }
+
+    [Theory]
+    [InlineData("Ignore")]
+    [InlineData("Observe")]
+    public void PLEDGE006_is_silent_in_Ignore_mode_and_not_otherwise(string mode)
+    {
+        var run = GeneratorHarness.Run(Account, mode);
+
+        run.AssertCompiles();
+        Assert.Equal(mode == "Ignore" ? 0 : 1, run.GeneratorDiagnostics.Count(diagnostic => diagnostic.Id == "PLEDGE006"));
     }
 
     [Theory]
