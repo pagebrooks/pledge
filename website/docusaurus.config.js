@@ -59,6 +59,10 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      // Follow the OS light/dark setting until the reader picks one with the toggle.
+      colorMode: {
+        respectPrefersColorScheme: true,
+      },
       navbar: {
         title: 'Pledge',
         items: [
