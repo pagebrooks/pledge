@@ -7,11 +7,15 @@ namespace PledgeContracts.Roslyn.Generator;
 // the Old snapshots, calls the original and runs the postconditions, plus one tiny interceptor stub per call site
 // whose #line directive hands the caller's file and line to __Checked through [CallerFilePath]/[CallerLineNumber].
 // Async methods split the part after the snapshots into an async __Awaited so preconditions still throw synchronously.
+// Every generated method is [DebuggerStepThrough], so F11 on a call lands in the user's method, not the plumbing; a
+// violation still breaks on the contract's line, which the #line directives point at.
 // The method passed in already holds only the contracts enabled under the modes (ContractedMethod.Enabled); each
 // check reports through the PledgeRuntime member for its own kind's mode.
 internal static class WrapperEmitter
 {
     public const string Namespace = "PledgeContracts.Generated";
+
+    public const string StepThrough = "        [global::System.Diagnostics.DebuggerStepThrough]";
 
     private const string CallerParameters =
         "[global::System.Runtime.CompilerServices.CallerFilePath] string __callerFilePath = \"\", [global::System.Runtime.CompilerServices.CallerLineNumber] int __callerLineNumber = 0";
@@ -47,7 +51,7 @@ internal static class WrapperEmitter
         for (var i = 0; i < callSites.Count; i++)
         {
             var site = callSites[i];
-            builder.AppendLine("        [global::System.Diagnostics.DebuggerStepThrough]");
+            builder.AppendLine(StepThrough);
             builder.AppendLine($"        [global::System.Runtime.CompilerServices.InterceptsLocation({site.Version}, {Literal(site.Data)})]");
             builder.AppendLine($"        public static {method.ReturnType} __Intercept{i}({Join(method.IsStatic ? string.Empty : "this " + receiver, parameters)})");
             builder.AppendLine("        {");
@@ -58,6 +62,7 @@ internal static class WrapperEmitter
             builder.AppendLine();
         }
 
+        builder.AppendLine(StepThrough);
         builder.AppendLine($"        private static {method.ReturnType} __Checked({Join(receiver, parameters, CallerParameters)})");
         builder.AppendLine("        {");
         foreach (var contract in method.Contracts.Where(contract => contract.Kind == ContractKind.Precondition))
@@ -95,6 +100,7 @@ internal static class WrapperEmitter
         {
             var snapshotParameters = Join(method.Snapshots.Select(snapshot => $"{snapshot.Type} {snapshot.Name}"));
             builder.AppendLine();
+            builder.AppendLine(StepThrough);
             builder.AppendLine($"        private static async {method.ReturnType} __Awaited({Join(receiver, parameters, snapshotParameters, "string __callerFilePath, int __callerLineNumber")})");
             builder.AppendLine("        {");
             AppendBody(builder, method, call, report, isAsync: true);

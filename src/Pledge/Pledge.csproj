@@ -14,8 +14,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="build/Pledge.props" Pack="true" PackagePath="build/" />
-    <None Include="build/Pledge.targets" Pack="true" PackagePath="build/" />
+    <!--
+      buildTransitive, not build: NuGet keeps build assets out of projects that get the package through a project
+      reference, but analyzers reach them anyway, so such a project would run the generator without
+      InterceptorsNamespaces and get PLEDGE005 (found Oct 30, 2026). buildTransitive also serves direct references.
+    -->
+    <None Include="build/Pledge.props" Pack="true" PackagePath="buildTransitive/" />
+    <None Include="build/Pledge.targets" Pack="true" PackagePath="buildTransitive/" />
     <None Include="$(ArtifactsPath)/bin/Pledge.Roslyn/$(Configuration.ToLowerInvariant())/Pledge.Roslyn.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
     <None Include="$(ArtifactsPath)/bin/Pledge.Roslyn.CodeFixes/$(Configuration.ToLowerInvariant())/Pledge.Roslyn.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs/" Visible="false" />
   </ItemGroup>

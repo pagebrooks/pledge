@@ -2,9 +2,10 @@
 
   <!--
     Builds throwaway consumer projects with the real SDK and checks what comes out: mode properties and their
-    validation, each mode's behaviour at run time, and Ignore mode's byte-identical assemblies. The fixtures load
-    Pledge, Pledge.Attributes and the Pledge.Roslyn analyzer from copies of this project's output and import
-    Pledge.targets from the source tree, so they see exactly what this commit would ship.
+    validation, each mode's behaviour at run time, Ignore mode's byte-identical assemblies, and the packed package.
+    Most fixtures load Pledge, Pledge.Attributes and the Pledge.Roslyn analyzer from copies of this project's output
+    and import Pledge.targets from the source tree, so they see exactly what this commit would ship; the package
+    tests pack the src projects and consume them through a PackageReference.
   -->
 
   <ItemGroup>
@@ -12,6 +13,11 @@
     <!-- For its output only: the fixtures load Pledge.Roslyn.dll as an analyzer from this project's bin folder. -->
     <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" />
     <PackageReference Include="ICSharpCode.Decompiler" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- PackageConsumerTests packs the src projects without building them, so it needs the configuration they were built in. -->
+    <AssemblyMetadata Include="Configuration" Value="$(Configuration)" />
   </ItemGroup>
 
   <ItemGroup>

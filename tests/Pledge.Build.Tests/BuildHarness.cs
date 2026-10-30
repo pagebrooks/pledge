@@ -77,8 +77,9 @@ internal sealed class Fixture : IDisposable
     }
 
     // Writes <name>/<name>.csproj. Properties go in the project body, where a consumer would put them; withPledge
-    // false gives the same project without the package, for the Ignore comparison.
-    public string WriteProject(string name, bool withPledge = true, string outputType = "Library", IReadOnlyDictionary<string, string>? properties = null)
+    // false gives the same project without the package, for the Ignore comparison. Items are raw item elements, such
+    // as a PackageReference.
+    public string WriteProject(string name, bool withPledge = true, string outputType = "Library", IReadOnlyDictionary<string, string>? properties = null, IReadOnlyList<string>? items = null)
     {
         var projectDirectory = Path.Combine(Directory, name);
         System.IO.Directory.CreateDirectory(projectDirectory);
@@ -100,6 +101,17 @@ internal sealed class Fixture : IDisposable
         }
 
         builder.AppendLine("  </PropertyGroup>");
+        if (items is { Count: > 0 })
+        {
+            builder.AppendLine("  <ItemGroup>");
+            foreach (var item in items)
+            {
+                builder.AppendLine(CultureInfo.InvariantCulture, $"    {item}");
+            }
+
+            builder.AppendLine("  </ItemGroup>");
+        }
+
         if (withPledge)
         {
             builder.AppendLine("  <ItemGroup>");
@@ -116,6 +128,21 @@ internal sealed class Fixture : IDisposable
         File.WriteAllText(path, builder.ToString());
         return path;
     }
+
+    // Restores from the given folder only, into a packages folder inside the fixture, so a package built by this
+    // test run never mixes with a cached one of the same version.
+    public void UseFeed(string feed) =>
+        File.WriteAllText(Path.Combine(Directory, "nuget.config"), $"""
+            <configuration>
+              <config>
+                <add key="globalPackagesFolder" value="packages" />
+              </config>
+              <packageSources>
+                <clear />
+                <add key="pledge" value="{SecurityElement.Escape(feed)}" />
+              </packageSources>
+            </configuration>
+            """);
 
     public void WriteSource(string project, string fileName, string content) =>
         File.WriteAllText(Path.Combine(Directory, project, fileName), content);

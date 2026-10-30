@@ -6,7 +6,8 @@ namespace PledgeContracts.Roslyn.Generator;
 // Writes the testing bridge's view of one contracted method: a probe that runs every contract around one call and
 // reports a PledgeOutcome instead of throwing, and a module initializer that registers it with PledgeRegistry.
 // Probes check every contract whatever the modes, since a property test is the point where all of them matter, and
-// they call the original method directly: generated code is not intercepted.
+// they call the original method directly: generated code is not intercepted. Like the wrappers, they are
+// [DebuggerStepThrough], so stepping into a property test's call lands in the user's method.
 internal static class ProbeEmitter
 {
     private const string Runtime = "global::PledgeContracts.";
@@ -101,6 +102,7 @@ internal static class ProbeEmitter
 
         if (isAsync)
         {
+            builder.AppendLine(WrapperEmitter.StepThrough);
             builder.AppendLine($"        private static async global::System.Threading.Tasks.ValueTask<{outcome}> Probe{signature}");
             builder.AppendLine("        {");
             AppendBody(builder, method, awaitKeyword: "await ");
@@ -108,8 +110,10 @@ internal static class ProbeEmitter
         }
         else
         {
+            builder.AppendLine(WrapperEmitter.StepThrough);
             builder.AppendLine($"        private static global::System.Threading.Tasks.ValueTask<{outcome}> Probe{signature} => new(Run(__receiver, __arguments));");
             builder.AppendLine();
+            builder.AppendLine(WrapperEmitter.StepThrough);
             builder.AppendLine($"        private static {outcome} Run{signature}");
             builder.AppendLine("        {");
             AppendBody(builder, method, awaitKeyword: string.Empty);
@@ -117,6 +121,7 @@ internal static class ProbeEmitter
         }
 
         builder.AppendLine();
+        builder.AppendLine(WrapperEmitter.StepThrough);
         builder.AppendLine($"        private static {Runtime}PledgeViolation Violation({Runtime}PledgeKind kind, string expression, string? message, global::System.Exception? thrown = null, global::System.Exception? cause = null) => new {Runtime}PledgeViolation");
         builder.AppendLine("        {");
         builder.AppendLine("            Kind = kind,");

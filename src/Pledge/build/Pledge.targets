@@ -65,7 +65,7 @@
     Targets run after every import, so this sees the final value. It fails only when something replaced the
     property after Pledge.targets appended to it: an import later in the build (a Directory.Build.targets, for
     instance) or a global property from the command line. Nothing is generated when every kind is Ignore, so the
-    check is skipped then. The generator's PLEDGE005 covers what this cannot see, such as ExcludeAssets="build".
+    check is skipped then. The generator's PLEDGE005 covers what this cannot see, such as ExcludeAssets="buildTransitive".
   -->
   <Target
     Name="PledgeValidateInterceptors"

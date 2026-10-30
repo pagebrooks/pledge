@@ -10,10 +10,10 @@ defaults; `.editorconfig` can change them (`dotnet_diagnostic.PLEDGE004.severity
 | [PLEDGE003](PLEDGE003.md) | Error | `Old(...)` used outside a postcondition | |
 | [PLEDGE004](PLEDGE004.md) | Warning | Impure expression in a contract | Mark the callee `[Pure]` |
 | [PLEDGE005](PLEDGE005.md) | Warning | Pledge generator is not active | |
-| [PLEDGE006](PLEDGE006.md) | Info | Contracted method has no call sites in this compilation | |
+| [PLEDGE006](PLEDGE006.md) | Info | Contracts are not checked here: no call sites, a delegate, or a call through an interface or base method | Call the contracted method directly |
 | [PLEDGE007](PLEDGE007.md) | Warning | `Old(...)` of a mutable reference | Copy with `.ToArray()` or `with { }` |
 | [PLEDGE008](PLEDGE008.md) | Warning | Constant argument violates a precondition | |
 | [PLEDGE009](PLEDGE009.md) | Warning | Contract on an unsupported member | |
 
-PLEDGE005, PLEDGE006 and PLEDGE009 come from the source generator, the rest from analyzers in the
-same assembly. All ship in the `Pledge` package.
+PLEDGE005, PLEDGE009 and PLEDGE006's no-call-sites form come from the source generator, the rest from
+analyzers in the same assembly. All ship in the `Pledge` package.

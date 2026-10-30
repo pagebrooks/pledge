@@ -11,9 +11,13 @@ namespace PledgeContracts.Roslyn.Tests;
 // fixes through an AdhocWorkspace so the result goes through Roslyn's usual simplification and formatting.
 internal static class AnalyzerHarness
 {
-    private static readonly ImmutableArray<DiagnosticAnalyzer> _analyzers = [new ContractAnalyzer(), new ConstantArgumentAnalyzer()];
+    private static readonly ImmutableArray<DiagnosticAnalyzer> _analyzers = [new ContractAnalyzer(), new ConstantArgumentAnalyzer(), new UncoveredCallAnalyzer()];
 
-    public static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string source, bool allowCompileErrors = false, params string[] extraSources)
+    public static Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string source, bool allowCompileErrors = false, params string[] extraSources) =>
+        AnalyzeAsync(source, globalOptions: null, allowCompileErrors, extraSources);
+
+    // Global options are the build_property.* values MSBuild would hand the analyzers, such as the modes.
+    public static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string source, IReadOnlyDictionary<string, string?>? globalOptions, bool allowCompileErrors = false, params string[] extraSources)
     {
         var compilation = GeneratorHarness.CreateCompilation(new[] { source }.Concat(extraSources), GeneratorHarness.ParseOptions());
         if (!allowCompileErrors)
@@ -22,7 +26,8 @@ internal static class AnalyzerHarness
             Assert.True(errors.Count == 0, string.Join(Environment.NewLine, errors.Select(e => e.ToString())));
         }
 
-        var diagnostics = await compilation.WithAnalyzers(_analyzers).GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken);
+        var options = new AnalyzerOptions([], new GeneratorHarness.OptionsProvider(globalOptions ?? new Dictionary<string, string?>()));
+        var diagnostics = await compilation.WithAnalyzers(_analyzers, options).GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken);
         return [.. diagnostics.OrderBy(d => d.Location.SourceSpan.Start)];
     }
 

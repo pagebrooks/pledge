@@ -99,6 +99,24 @@ internal static class Diagnostics
         isEnabledByDefault: true,
         helpLinkUri: HelpBase + DiagnosticIds.NoCallSites + ".md");
 
+    public static readonly DiagnosticDescriptor DelegateNotChecked = new(
+        id: DiagnosticIds.NoCallSites,
+        title: "Contracts are not checked through this reference",
+        messageFormat: "'{0}' is turned into a delegate here, and calls through a delegate are not intercepted, so its contracts are not checked on them",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        helpLinkUri: HelpBase + DiagnosticIds.NoCallSites + ".md");
+
+    public static readonly DiagnosticDescriptor DispatchNotChecked = new(
+        id: DiagnosticIds.NoCallSites,
+        title: "Contracts are not checked on this call",
+        messageFormat: "This call binds to '{0}' and can run '{1}', whose contracts are checked only on calls that bind to '{1}' itself",
+        category: Category,
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        helpLinkUri: HelpBase + DiagnosticIds.NoCallSites + ".md");
+
     public static readonly DiagnosticDescriptor OldOfMutableReference = new(
         id: DiagnosticIds.OldOfMutableReference,
         title: "Old(...) of a mutable reference",

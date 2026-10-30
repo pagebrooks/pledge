@@ -83,7 +83,7 @@ internal static class GeneratorHarness
     }
 
     // Global options the way Pledge.targets hands them over; a null value is a property that was never set.
-    private sealed class OptionsProvider(IReadOnlyDictionary<string, string?> globals) : AnalyzerConfigOptionsProvider
+    internal sealed class OptionsProvider(IReadOnlyDictionary<string, string?> globals) : AnalyzerConfigOptionsProvider
     {
         public override AnalyzerConfigOptions GlobalOptions { get; } = new Options(globals);
 
