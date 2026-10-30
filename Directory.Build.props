@@ -37,7 +37,7 @@
     <Product>Pledge</Product>
     <Copyright>Copyright (c) 2026 Page Brooks</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/pagebrooks/pledge</PackageProjectUrl>
+    <PackageProjectUrl>https://pledge.pagebrooks.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/pagebrooks/pledge</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>design-by-contract;contracts;preconditions;postconditions;invariants;roslyn;source-generator;interceptors</PackageTags>
