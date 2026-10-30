@@ -14,6 +14,7 @@ public sealed class PledgeGenerator : IIncrementalGenerator
     {
         public const string Methods = "Methods";
         public const string CallSites = "CallSites";
+        public const string Misplaced = "Misplaced";
     }
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -34,17 +35,30 @@ public sealed class PledgeGenerator : IIncrementalGenerator
             .Select(static (site, _) => site!.Value)
             .WithTrackingName(TrackingNames.CallSites);
 
-        var mode = context.AnalyzerConfigOptionsProvider
-            .Select(static (provider, _) => PledgeModes.Parse(provider.GlobalOptions.TryGetValue(PledgeModes.Property, out var value) ? value : null));
+        var misplaced = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                static (node, _) => ContractSyntax.IsContractInvocation(node),
+                static (syntaxContext, cancellationToken) => MisplacedContractParser.Parse((InvocationExpressionSyntax)syntaxContext.Node, syntaxContext.SemanticModel, cancellationToken))
+            .Where(static contract => contract is not null)
+            .Select(static (contract, _) => contract!.Value)
+            .WithTrackingName(TrackingNames.Misplaced);
 
-        var interceptorsEnabled = context.ParseOptionsProvider
-            .Select(static (options, _) => InterceptorsEnabled(options));
+        var options = context.AnalyzerConfigOptionsProvider.Select(static (provider, _) => (
+            Mode: PledgeModes.Parse(provider.GlobalOptions.TryGetValue(PledgeModes.ModeProperty, out var mode) ? mode : null),
+            Metadata: PledgeModes.ParseMetadata(provider.GlobalOptions.TryGetValue(PledgeModes.MetadataProperty, out var metadata) ? metadata : null)));
+
+        var interceptorsEnabled = context.ParseOptionsProvider.Select(static (parseOptions, _) => InterceptorsEnabled(parseOptions));
 
         context.RegisterSourceOutput(methods, static (productionContext, method) => ReportProblems(productionContext, method));
+        context.RegisterSourceOutput(misplaced, static (productionContext, contract) =>
+            productionContext.ReportDiagnostic(Diagnostic.Create(Diagnostics.UnsupportedTarget, contract.Site.ToLocation(), contract.Member, contract.Problem)));
 
-        var input = methods.Collect().Combine(callSites.Collect()).Combine(mode.Combine(interceptorsEnabled));
+        var collected = methods.Collect();
+        context.RegisterSourceOutput(collected.Combine(options), static (productionContext, input) => EmitMetadata(productionContext, input.Left, input.Right.Metadata));
+
+        var input = collected.Combine(callSites.Collect()).Combine(options.Combine(interceptorsEnabled));
         context.RegisterSourceOutput(input, static (productionContext, input) =>
-            Emit(productionContext, input.Left.Left, input.Left.Right, input.Right.Left, input.Right.Right));
+            EmitWrappers(productionContext, input.Left.Left, input.Left.Right, input.Right.Left.Mode, input.Right.Right));
     }
 
     private static bool InterceptorsEnabled(ParseOptions options)
@@ -73,7 +87,20 @@ public sealed class PledgeGenerator : IIncrementalGenerator
         }
     }
 
-    private static void Emit(
+    private static void EmitMetadata(SourceProductionContext context, ImmutableArray<ContractedMethod> methods, bool enabled)
+    {
+        if (!enabled || methods.IsEmpty)
+        {
+            return;
+        }
+
+        if (MetadataEmitter.Emit(methods) is { } source)
+        {
+            context.AddSource(MetadataEmitter.HintName, source);
+        }
+    }
+
+    private static void EmitWrappers(
         SourceProductionContext context,
         ImmutableArray<ContractedMethod> methods,
         ImmutableArray<CallSite> callSites,

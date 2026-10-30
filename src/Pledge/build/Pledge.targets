@@ -8,10 +8,13 @@
   <PropertyGroup>
     <PledgeMode Condition="'$(PledgeMode)' == '' and '$(Configuration)' == 'Debug'">Enforce</PledgeMode>
     <PledgeMode Condition="'$(PledgeMode)' == ''">Ignore</PledgeMode>
+    <!-- The [Requires]/[Ensures] metadata attributes are documentation, not checks: on in every mode unless turned off. -->
+    <PledgeMetadata Condition="'$(PledgeMetadata)' == ''">true</PledgeMetadata>
   </PropertyGroup>
 
   <ItemGroup>
     <CompilerVisibleProperty Include="PledgeMode" />
+    <CompilerVisibleProperty Include="PledgeMetadata" />
   </ItemGroup>
 
   <Target Name="PledgeValidateMode" BeforeTargets="CoreCompile">

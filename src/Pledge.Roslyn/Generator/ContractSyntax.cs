@@ -8,6 +8,9 @@ internal static class ContractSyntax
 {
     public static bool IsContractName(string? name) => name is "Requires" or "Ensures" or "EnsuresOnThrow";
 
+    public static bool IsContractInvocation(SyntaxNode node) =>
+        node is InvocationExpressionSyntax invocation && IsContractName(NameOf(invocation.Expression));
+
     public static bool IsCandidateDeclaration(SyntaxNode node) =>
         node is MethodDeclarationSyntax { Body.Statements: { Count: > 0 } statements } && IsContractCall(statements[0], out _);
 

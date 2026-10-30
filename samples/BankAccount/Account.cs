@@ -10,6 +10,10 @@ public sealed class Account(decimal balance)
     {
         Pledge.Requires(amount > 0);
         Pledge.Requires(amount <= Balance, "insufficient funds");
+        Pledge.Ensures(Balance == Pledge.Old(Balance) - amount);
+        Pledge.Ensures(Pledge.Result<decimal>() >= 0);
+        Pledge.EnsuresOnThrow<InvalidOperationException>(Balance == Pledge.Old(Balance));
+
         Balance -= amount;
         return Balance;
     }

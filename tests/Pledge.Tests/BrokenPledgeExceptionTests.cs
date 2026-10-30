@@ -31,6 +31,18 @@ public sealed class BrokenPledgeExceptionTests
     }
 
     [Fact]
+    public void The_thrown_exception_is_the_inner_exception_when_the_expression_did_not_throw()
+    {
+        var thrown = new InvalidOperationException("frozen");
+        var violation = Violation(PledgeKind.Postcondition) with { Thrown = thrown };
+
+        Assert.Same(thrown, BrokenPledgeException.From(violation).InnerException);
+
+        var cause = new InvalidCastException();
+        Assert.Same(cause, BrokenPledgeException.From(violation with { Cause = cause }).InnerException);
+    }
+
+    [Fact]
     public void Kind_specific_exceptions_reject_a_violation_of_another_kind()
     {
         var violation = Violation(PledgeKind.Postcondition);

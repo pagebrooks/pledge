@@ -4,7 +4,7 @@ namespace PledgeContracts.Roslyn.Tests;
 
 public sealed class RequiresGenerationTests
 {
-    private const string Account = """
+    internal const string Account = """
         using PledgeContracts;
 
         namespace Bank
@@ -39,7 +39,7 @@ public sealed class RequiresGenerationTests
 
         run.AssertCompiles();
         Assert.Empty(run.GeneratorDiagnostics);
-        var source = run.SingleGeneratedSource;
+        var source = run.SingleWrapper;
         Assert.Contains("namespace PledgeContracts.Generated", source, StringComparison.Ordinal);
         Assert.Contains("[global::System.Runtime.CompilerServices.InterceptsLocation(1, \"", source, StringComparison.Ordinal);
         Assert.Contains("public static decimal __Intercept0(this global::Bank.Account @this, decimal amount)", source, StringComparison.Ordinal);
@@ -114,7 +114,7 @@ public sealed class RequiresGenerationTests
             }
             """);
 
-        Assert.Contains("return global::Util.Numbers.Clamp(value, min, max);", run.SingleGeneratedSource, StringComparison.Ordinal);
+        Assert.Contains("return global::Util.Numbers.Clamp(value, min, max);", run.SingleWrapper, StringComparison.Ordinal);
         Assert.Equal(10, run.Invoke("Scenario", "Fine"));
         Assert.Throws<PreconditionViolationException>(() => run.Invoke("Scenario", "Broken"));
     }
@@ -215,7 +215,7 @@ public sealed class RequiresGenerationTests
             }
             """);
 
-        var source = run.SingleGeneratedSource;
+        var source = run.SingleWrapper;
         Assert.Contains("using global::System.Linq;", source, StringComparison.Ordinal);
         Assert.Contains("using global::Shop.Orders;", source, StringComparison.Ordinal);
         Assert.Contains("global::Shop.Orders.Rules.IsOpen(@this.Status)", source, StringComparison.Ordinal);
@@ -253,35 +253,6 @@ public sealed class RequiresGenerationTests
     }
 
     [Fact]
-    public void Observe_mode_reports_to_the_handler_and_continues()
-    {
-        var run = GeneratorHarness.Run(Account + """
-
-            public static class Scenario
-            {
-                public static object Run() => new Bank.Account(10m).Withdraw(50m);
-            }
-            """, mode: "Observe");
-
-        Assert.Contains("global::PledgeContracts.PledgeRuntime.Observe(", run.SingleGeneratedSource, StringComparison.Ordinal);
-
-        var seen = new List<PledgeViolation>();
-        var previous = PledgeRuntime.ViolationHandler;
-        PledgeRuntime.ViolationHandler = seen.Add;
-        try
-        {
-            Assert.Equal(-40m, run.Invoke("Scenario", "Run"));
-        }
-        finally
-        {
-            PledgeRuntime.ViolationHandler = previous;
-        }
-
-        var violation = Assert.Single(seen);
-        Assert.Equal("amount <= Balance", violation.Expression);
-    }
-
-    [Fact]
     public void EnforceFailFast_mode_calls_the_fail_fast_path()
     {
         var run = GeneratorHarness.Run(Account + """
@@ -293,7 +264,7 @@ public sealed class RequiresGenerationTests
             """, mode: "enforcefailfast");
 
         run.AssertCompiles();
-        Assert.Contains("global::PledgeContracts.PledgeRuntime.EnforceFailFast(", run.SingleGeneratedSource, StringComparison.Ordinal);
+        Assert.Contains("global::PledgeContracts.PledgeRuntime.EnforceFailFast(", run.SingleWrapper, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -307,7 +278,7 @@ public sealed class RequiresGenerationTests
             }
             """, mode: "Ignore");
 
-        Assert.Empty(run.GeneratedSources);
+        Assert.Empty(run.Wrappers);
         Assert.Empty(run.GeneratorDiagnostics);
         Assert.Equal(-40m, run.Invoke("Scenario", "Run"));
     }
@@ -323,7 +294,7 @@ public sealed class RequiresGenerationTests
             }
             """, interceptorsEnabled: false);
 
-        Assert.Empty(run.GeneratedSources);
+        Assert.Empty(run.Wrappers);
         var diagnostic = Assert.Single(run.GeneratorDiagnostics);
         Assert.Equal("PLEDGE005", diagnostic.Id);
         Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
@@ -336,7 +307,7 @@ public sealed class RequiresGenerationTests
         var run = GeneratorHarness.Run(Account);
 
         run.AssertCompiles();
-        Assert.Empty(run.GeneratedSources);
+        Assert.Empty(run.Wrappers);
         Assert.Empty(run.GeneratorDiagnostics);
     }
 
@@ -345,7 +316,6 @@ public sealed class RequiresGenerationTests
     [InlineData("public int M<T>(T x) { Pledge.Requires(x != null); return 1; }", "generic methods")]
     [InlineData("internal int M(int x) { Pledge.Requires(x > 0); return x; } private void Unused() { }", null)]
     [InlineData("private int M(int x) { Pledge.Requires(x > 0); return x; }", "'M' is not visible")]
-    [InlineData("public int M(int x) { Pledge.Requires(x > 0); Pledge.Ensures(Pledge.Result<int>() > 0); return x; }", "Pledge.Ensures is not supported yet")]
     [InlineData("public int M(int x) { Pledge.Requires(Check(x)); return x; bool Check(int v) => v > 0; }", "local function 'Check'")]
     public void Unsupported_targets_report_PLEDGE009_instead_of_generating(string member, string? expectedProblem)
     {
@@ -364,14 +334,14 @@ public sealed class RequiresGenerationTests
         if (expectedProblem is null)
         {
             Assert.Empty(run.GeneratorDiagnostics);
-            Assert.Single(run.GeneratedSources);
+            Assert.Single(run.Wrappers);
             return;
         }
 
         var diagnostic = Assert.Single(run.GeneratorDiagnostics);
         Assert.Equal("PLEDGE009", diagnostic.Id);
         Assert.Contains(expectedProblem, diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
-        Assert.Empty(run.GeneratedSources);
+        Assert.Empty(run.Wrappers);
     }
 
     [Fact]

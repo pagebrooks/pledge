@@ -37,6 +37,8 @@ PledgeContracts.PledgeViolation.Member.init -> void
 PledgeContracts.PledgeViolation.Message.get -> string?
 PledgeContracts.PledgeViolation.Message.init -> void
 PledgeContracts.PledgeViolation.PledgeViolation() -> void
+PledgeContracts.PledgeViolation.Thrown.get -> System.Exception?
+PledgeContracts.PledgeViolation.Thrown.init -> void
 PledgeContracts.PostconditionViolationException
 PledgeContracts.PostconditionViolationException.PostconditionViolationException(PledgeContracts.PledgeViolation! violation) -> void
 PledgeContracts.PreconditionViolationException

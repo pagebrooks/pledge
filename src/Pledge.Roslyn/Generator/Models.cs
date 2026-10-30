@@ -38,10 +38,36 @@ internal sealed record ParameterModel(string Name, string Type, RefKind RefKind)
 internal enum ContractKind
 {
     Precondition,
+    Postcondition,
+    PostconditionOnThrow,
 }
 
-// One lifted contract: the author's text for messages, the rewritten expression for the generated check.
-internal sealed record ContractModel(ContractKind Kind, string Text, string Expression, string? Message, SourceSite Site);
+internal enum AsyncKind
+{
+    None,
+    Task,
+    TaskOfResult,
+    ValueTask,
+    ValueTaskOfResult,
+}
+
+// One lifted contract: the author's text for messages and metadata, the rewritten expression for the generated
+// check. ExceptionType and ExceptionDepth are set for EnsuresOnThrow; depth orders catch clauses derived-first.
+internal sealed record ContractModel(
+    int Index,
+    ContractKind Kind,
+    string Text,
+    string Expression,
+    string? Message,
+    SourceSite Site,
+    string? ExceptionType,
+    int ExceptionDepth)
+{
+    public string PledgeKind => Kind == ContractKind.Precondition ? "Precondition" : "Postcondition";
+}
+
+// One Old(...) occurrence, evaluated after the preconditions and before the body into a local named Name.
+internal sealed record SnapshotModel(string Name, string Type, string Expression, string Text, SourceSite Site);
 
 internal sealed record ContractedMethod(
     string Key,
@@ -50,14 +76,28 @@ internal sealed record ContractedMethod(
     string ContainingType,
     string MemberName,
     string MethodName,
+    string Signature,
     bool IsStatic,
     bool ReturnsVoid,
     string ReturnType,
+    AsyncKind AsyncKind,
+    string? ResultType,
+    bool OnThrowCoversCancellation,
     EquatableArray<ParameterModel> Parameters,
     EquatableArray<string> Usings,
     EquatableArray<ContractModel> Contracts,
+    EquatableArray<SnapshotModel> Snapshots,
     EquatableArray<string> Problems,
-    SourceSite Site);
+    SourceSite Site)
+{
+    public bool HasResult => ResultType is not null;
+
+    // Postconditions and snapshots need the original call inside a try block; preconditions alone just forward.
+    public bool WrapsBody => Snapshots.Count > 0 || Contracts.Any(contract => contract.Kind != ContractKind.Precondition);
+}
 
 // One interceptable invocation of a contracted method. Version and Data are what [InterceptsLocation] needs.
 internal readonly record struct CallSite(string MethodKey, int Version, string Data, string FilePath, int Line);
+
+// A Pledge call somewhere the generator cannot act on it, reported so it never silently compiles to nothing.
+internal readonly record struct MisplacedContract(SourceSite Site, string Member, string Problem);

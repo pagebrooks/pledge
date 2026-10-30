@@ -10,9 +10,12 @@ internal enum PledgeMode
 
 internal static class PledgeModes
 {
-    // Surfaced to the generator by <CompilerVisibleProperty Include="PledgeMode" /> in build/Pledge.targets,
-    // which also rejects values outside this set at build time. Unknown values enforce rather than silently ignore.
-    public const string Property = "build_property.PledgeMode";
+    // Surfaced to the generator by <CompilerVisibleProperty /> items in build/Pledge.targets, which also rejects
+    // mode values outside the set at build time. Unknown values enforce rather than silently ignore.
+    public const string ModeProperty = "build_property.PledgeMode";
+
+    // Metadata attributes are documentation, not checks, so they have their own switch and default to on in every mode.
+    public const string MetadataProperty = "build_property.PledgeMetadata";
 
     public static PledgeMode Parse(string? value)
     {
@@ -33,6 +36,8 @@ internal static class PledgeModes
 
         return PledgeMode.Enforce;
     }
+
+    public static bool ParseMetadata(string? value) => !string.Equals(value, "false", StringComparison.OrdinalIgnoreCase);
 
     // The PledgeRuntime member generated checks call when a contract fails.
     public static string ReportMethod(PledgeMode mode) => mode switch

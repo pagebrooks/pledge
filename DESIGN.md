@@ -86,7 +86,7 @@ private void BalanceNeverNegative() => Pledge.Invariant(Balance >= 0);
 - Pledge calls must be the first statements of the body, before any other code. Anything after the first non-contract statement is a diagnostic, not silently ignored.
 - `Requires` before `Ensures` before `EnsuresOnThrow`, by convention; the analyzer offers a fix to reorder.
 - Contract expressions must be pure: no assignments, no `await`, no calls to methods not marked `[Pure]` or known-pure BCL members. Violations are a warning in MVP, an error in v1.0.
-- Supported targets in MVP: instance and static methods (sync and `async Task` / `Task<T>` / `ValueTask<T>`), property getters and setters. Constructors, iterators, local functions, lambdas and `ref` returns are v1.0 or later.
+- Supported targets in MVP: instance and static methods (sync and `async Task` / `Task<T>` / `ValueTask` / `ValueTask<T>`). Property accessors are not invocations, so interceptors cannot reach them (found Oct 29, 2026); contracts on properties arrive with decorator mode in v1.0, and until then the generator reports PLEDGE009 on them. Constructors, iterators, local functions, lambdas and `ref` returns are v1.0 or later.
 
 **Interface and abstract contracts (v1.0).** Interface members have no body, so their contracts live in a sibling class marked `[PledgeFor(typeof(IAccount))]` with mirroring signatures, following the Code Contracts and csharplang #105 pattern. Implementations inherit them automatically in decorator mode.
 
@@ -158,7 +158,7 @@ namespace PledgeContracts.Generated
 
 | Mode | Behavior | Cost | C++26 equivalent |
 | --- | --- | --- | --- |
-| `Ignore` | Generator emits no wrappers; calls compile away | Zero | ignore |
+| `Ignore` | Generator emits no wrappers; calls compile away (metadata attributes still emitted unless `PledgeMetadata` is `false`) | Zero | ignore |
 | `Observe` | Checks run; violations go to `PledgeRuntime.ViolationHandler` and execution continues | Checks + handler | observe |
 | `Enforce` | Checks run; violations throw the kind-specific exception | Checks | enforce |
 | `EnforceFailFast` | Checks run; violations call `Environment.FailFast` after the handler | Checks | quick-enforce |
@@ -184,13 +184,13 @@ The rules below are the ones Code Contracts documented and C++26 debated; gettin
 
 **`Old()` snapshots.** Taken once, after preconditions pass and before the body. Reference types snapshot the reference, not a deep copy — the docs say so loudly, and an analyzer warns when `Old` wraps a mutable reference type without a `.ToArray()` / `.ToList()` / record-with-expression. In `Ignore` mode no snapshot code is emitted.
 
-**Postconditions and exceptions.** `Ensures` is checked only on normal return. `EnsuresOnThrow<T>` is checked in a `catch when` filter for `T` and its subtypes, and never swallows: the original exception always propagates. A postcondition that itself throws is reported as a postcondition violation with the inner exception attached.
+**Postconditions and exceptions.** `Ensures` is checked only on normal return. `EnsuresOnThrow<T>` is checked in a `catch` clause for `T` and its subtypes (clauses ordered derived-first so each is reachable) and never swallows: when the contract holds, the original exception is rethrown untouched; when it is broken, `Enforce` throws `PostconditionViolationException` with the original as `InnerException` and `Violation.Thrown`, while `Observe` reports and rethrows the original. A postcondition that itself throws is reported as a postcondition violation with that exception as `Cause`.
 
-**Async.** For `Task`, `Task<T>` and `ValueTask<T>` the wrapper awaits the callee and checks postconditions after completion; `Result<T>()` is the awaited value. Snapshots are taken before the first `await`. Cancellation (`OperationCanceledException`) bypasses postconditions by default; configurable.
+**Async.** For `Task`, `Task<T>`, `ValueTask` and `ValueTask<T>` the wrapper awaits the callee and checks postconditions after completion; `Result<T>()` is the awaited value. Preconditions and snapshots run synchronously before any task exists, so a broken precondition throws at the call like `ArgumentException` would, not through a faulted task. Cancellation (`OperationCanceledException`) bypasses `EnsuresOnThrow` checks unless a contract names a cancellation exception type; `Ensures` never runs on an exceptional exit anyway. An `async void` method cannot carry postconditions (PLEDGE009). Methods that return a task without being `async` are awaited the same way.
 
 **`void` and `out`.** `Result<T>()` in a `void` method is an analyzer error. `out` parameters are referenced through `ValueAtReturn(out x)` (v1.0).
 
-**Properties.** Getter contracts may use `Result<T>()`; setter contracts may reference `value`. Auto-properties cannot carry contracts (no body); the analyzer suggests converting.
+**Properties (v1.0, decorator mode).** Getter contracts may use `Result<T>()`; setter contracts may reference `value`. Auto-properties cannot carry contracts (no body); the analyzer suggests converting. Interceptor mode cannot cover accessors, see the authoring model.
 
 **Purity.** Contract expressions must not assign, `await`, call `Console`/IO, or invoke methods lacking `[Pure]` (either `System.Diagnostics.Contracts.PureAttribute` or the library's own). Known-pure BCL members (`string.Length`, LINQ `Any`/`All`/`Count`, `Math.*`, comparison operators) are allow-listed. Impure contracts are the classic source of heisenbugs when modes change.
 
@@ -260,7 +260,7 @@ public void Account_pledges_hold() =>
 
 The generator emits a declarative view of every contract so consumers in other assemblies, doc tools and future analyzers can see it without running it.
 
-- **Metadata attributes.** For each contracted member the generator adds `[Requires("amount > 0")]`, `[Ensures("Balance == old(Balance) - amount")]`, `[EnsuresOnThrow(typeof(InvalidOperationException), "...")]` with the normalized expression text. These are the only strings in the system and they are output, never input. They survive into the compiled assembly and NuGet package.
+- **Metadata attributes.** For each contracted member the generator records `[Requires("amount > 0")]`, `[Ensures("Balance == Old(Balance) - amount")]`, `[EnsuresOnThrow(typeof(InvalidOperationException), "...")]` with the normalized expression text. A source generator cannot add attributes to members it did not declare, so these go on the assembly and name the member: `[assembly: Requires(typeof(Account), "Withdraw(decimal)", "amount > 0")]`; the member-level shape exists for generated decorators and hand-written metadata. They are output, never input, and survive into the compiled assembly and NuGet package. They are emitted in every mode, including `Ignore`, because Release builds are the ones that get packaged; `<PledgeMetadata>false</PledgeMetadata>` turns them off, which is also what the byte-identical-IL check uses.
 - **XML doc enrichment.** An MSBuild task appends a `<contracts>` block (or `<remarks>` text, configurable) to the member's XML doc so IntelliSense shows *Requires: amount > 0 · Ensures: result ≥ 0* on hover and DocFX renders it. Code Contracts' doc generator did this and users missed it most.
 - **Cross-assembly consumption (v1.0).** The analyzer reads the metadata attributes from referenced assemblies, so PLEDGE008 (constant violates precondition) works against a contracted library you consume, not only code in your solution.
 - **Markdown export (later).** `dotnet contracts export` writes a per-type contract summary for READMEs and API docs.
@@ -295,7 +295,7 @@ The MVP is the smallest thing that proves the authoring experience holds up in r
 | Area | MVP (v0.1–0.3) | v1.0 | Later |
 | --- | --- | --- | --- |
 | Authoring | `Requires`, `Ensures`, `Result<T>`, `Old`, `EnsuresOnThrow` | `ValueAtReturn`, `Invariant` + `[Invariant]`, `[PledgeFor]` interface contracts, `Requires<TException>` | Constructors, iterators, local functions, lambdas, `ref` returns |
-| Targets | Instance/static methods, sync + `Task`/`Task<T>`/`ValueTask<T>`, property get/set | Generic methods per instantiation, records, structs | `IAsyncEnumerable`, `ref struct` members |
+| Targets | Instance/static methods, sync + `Task`/`Task<T>`/`ValueTask`/`ValueTask<T>` | Property get/set (decorator mode), generic methods per instantiation, records, structs | `IAsyncEnumerable`, `ref struct` members |
 | Execution | Interceptor mode | Generated DI decorators for interfaces; contract inheritance | Optional Fody weaver package (callee-side) |
 | Modes | `Ignore` / `Observe` / `Enforce` / `EnforceFailFast`, per-kind MSBuild properties | Per-assembly and per-type overrides via attributes | Runtime toggle for `Observe` sampling |
 | Analyzers | PLEDGE001–008 | PLEDGE010–020, cross-assembly metadata reading | SMT/range checking |

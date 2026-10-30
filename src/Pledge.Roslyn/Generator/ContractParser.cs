@@ -17,15 +17,21 @@ internal static class ContractParser
             return null;
         }
 
-        var pledgeType = model.Compilation.GetTypeByMetadataName(PledgeTypeName);
+        var compilation = model.Compilation;
+        var pledgeType = compilation.GetTypeByMetadataName(PledgeTypeName);
         if (pledgeType is null)
         {
             return null;
         }
 
+        var (asyncKind, resultType) = Classify(method, compilation);
         var problems = new List<string>();
         var contracts = new List<ContractModel>();
-        var rewriter = new ContractExpressionRewriter(model, problems);
+        var snapshots = new List<SnapshotModel>();
+        var normalizer = new ContractTextNormalizer(model, pledgeType);
+        var rewriter = new ContractExpressionRewriter(model, pledgeType, resultType, normalizer, snapshots, problems);
+        var cancellationType = compilation.GetTypeByMetadataName("System.OperationCanceledException");
+        var onThrowCoversCancellation = false;
 
         foreach (var statement in declaration.Body.Statements)
         {
@@ -40,10 +46,21 @@ internal static class ContractParser
                 break;
             }
 
-            if (call.Name != "Requires")
+            var kind = call.Name switch
             {
-                problems.Add($"Pledge.{call.Name} is not supported yet; postconditions land in a later release");
-                continue;
+                "Requires" => ContractKind.Precondition,
+                "Ensures" => ContractKind.Postcondition,
+                _ => ContractKind.PostconditionOnThrow,
+            };
+
+            string? exceptionType = null;
+            var exceptionDepth = 0;
+            if (kind == ContractKind.PostconditionOnThrow && call.TypeArguments.Length == 1)
+            {
+                var thrown = call.TypeArguments[0];
+                exceptionType = thrown.ToDisplayString(DisplayFormats.Type);
+                exceptionDepth = Depth(thrown);
+                onThrowCoversCancellation |= cancellationType is not null && DerivesFrom(thrown, cancellationType);
             }
 
             var condition = Argument(invocation, call, "condition");
@@ -52,13 +69,17 @@ internal static class ContractParser
                 continue;
             }
 
+            rewriter.Kind = kind;
             var message = Argument(invocation, call, "message");
             contracts.Add(new ContractModel(
-                ContractKind.Precondition,
-                Text: condition.NormalizeWhitespace().ToString(),
-                Expression: Lift(rewriter, condition),
-                Message: message is null ? null : Lift(rewriter, message),
-                SourceSite.Of(condition)));
+                Index: contracts.Count,
+                Kind: kind,
+                Text: normalizer.Normalize(condition),
+                Expression: rewriter.Lift(condition),
+                Message: message is null ? null : rewriter.Lift(message),
+                Site: SourceSite.Of(condition),
+                ExceptionType: exceptionType,
+                ExceptionDepth: exceptionDepth));
         }
 
         if (contracts.Count == 0 && problems.Count == 0)
@@ -66,7 +87,7 @@ internal static class ContractParser
             return null;
         }
 
-        CheckTarget(method, problems);
+        CheckTarget(method, asyncKind, contracts, snapshots, problems);
 
         var key = method.ToDisplayString(DisplayFormats.MethodKey);
         var baseName = Sanitize(method.ContainingType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat) + "_" + method.Name) + "_" + Fnv1a(key);
@@ -78,14 +99,55 @@ internal static class ContractParser
             ContainingType: method.ContainingType.ToDisplayString(DisplayFormats.Type),
             MemberName: method.ContainingType.Name + "." + method.Name,
             MethodName: method.Name,
+            Signature: method.ToDisplayString(DisplayFormats.Signature),
             IsStatic: method.IsStatic,
             ReturnsVoid: method.ReturnsVoid,
             ReturnType: method.ReturnType.ToDisplayString(DisplayFormats.Type),
+            AsyncKind: asyncKind,
+            ResultType: resultType?.ToDisplayString(DisplayFormats.Type),
+            OnThrowCoversCancellation: onThrowCoversCancellation,
             Parameters: method.Parameters.Select(p => new ParameterModel(p.Name, p.Type.ToDisplayString(DisplayFormats.Type), p.RefKind)).ToEquatableArray(),
             Usings: CollectUsings(declaration, model, cancellationToken).ToEquatableArray(),
             Contracts: contracts.ToEquatableArray(),
+            Snapshots: snapshots.ToEquatableArray(),
             Problems: problems.Distinct().ToEquatableArray(),
             Site: SourceSite.Of(declaration.Identifier.Parent ?? declaration));
+    }
+
+    // What the wrapper awaits, if anything, and the type Result<T>() stands for.
+    private static (AsyncKind Kind, ITypeSymbol? ResultType) Classify(IMethodSymbol method, Compilation compilation)
+    {
+        if (method.ReturnsVoid)
+        {
+            return (AsyncKind.None, null);
+        }
+
+        var returnType = method.ReturnType;
+        var definition = returnType.OriginalDefinition;
+        if (Is(definition, "System.Threading.Tasks.Task"))
+        {
+            return (AsyncKind.Task, null);
+        }
+
+        if (Is(definition, "System.Threading.Tasks.Task`1"))
+        {
+            return (AsyncKind.TaskOfResult, ((INamedTypeSymbol)returnType).TypeArguments[0]);
+        }
+
+        if (Is(definition, "System.Threading.Tasks.ValueTask"))
+        {
+            return (AsyncKind.ValueTask, null);
+        }
+
+        if (Is(definition, "System.Threading.Tasks.ValueTask`1"))
+        {
+            return (AsyncKind.ValueTaskOfResult, ((INamedTypeSymbol)returnType).TypeArguments[0]);
+        }
+
+        return (AsyncKind.None, returnType);
+
+        bool Is(ITypeSymbol candidate, string metadataName) =>
+            SymbolEqualityComparer.Default.Equals(candidate, compilation.GetTypeByMetadataName(metadataName));
     }
 
     private static ExpressionSyntax? Argument(InvocationExpressionSyntax invocation, IMethodSymbol method, string parameterName)
@@ -110,10 +172,7 @@ internal static class ContractParser
         return null;
     }
 
-    private static string Lift(ContractExpressionRewriter rewriter, ExpressionSyntax expression) =>
-        rewriter.Visit(expression)!.NormalizeWhitespace().ToFullString();
-
-    private static void CheckTarget(IMethodSymbol method, List<string> problems)
+    private static void CheckTarget(IMethodSymbol method, AsyncKind asyncKind, List<ContractModel> contracts, List<SnapshotModel> snapshots, List<string> problems)
     {
         if (method.MethodKind != MethodKind.Ordinary)
         {
@@ -145,6 +204,14 @@ internal static class ContractParser
             problems.Add("ref returns are not supported");
         }
 
+        var wrapsBody = snapshots.Count > 0 || contracts.Any(contract => contract.Kind != ContractKind.Precondition);
+        if (wrapsBody && method.IsAsync && asyncKind == AsyncKind.None)
+        {
+            problems.Add(method.ReturnsVoid
+                ? "async void methods cannot carry postconditions: there is no completion to check them after"
+                : "postconditions on async methods are supported for Task, Task<T>, ValueTask and ValueTask<T> only");
+        }
+
         for (ISymbol? current = method; current is not null; current = current.ContainingType)
         {
             if (current.DeclaredAccessibility is Accessibility.Private or Accessibility.Protected or Accessibility.ProtectedAndInternal)
@@ -153,6 +220,30 @@ internal static class ContractParser
                 break;
             }
         }
+    }
+
+    private static int Depth(ITypeSymbol type)
+    {
+        var depth = 0;
+        for (var current = type.BaseType; current is not null; current = current.BaseType)
+        {
+            depth++;
+        }
+
+        return depth;
+    }
+
+    private static bool DerivesFrom(ITypeSymbol type, INamedTypeSymbol baseType)
+    {
+        for (ITypeSymbol? current = type; current is not null; current = current.BaseType)
+        {
+            if (SymbolEqualityComparer.Default.Equals(current, baseType))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // The generated file is elsewhere, so the author's usings (resolved, so relative names survive the move) and the

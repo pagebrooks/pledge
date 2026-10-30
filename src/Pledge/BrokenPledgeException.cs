@@ -3,7 +3,7 @@ namespace PledgeContracts;
 public abstract class BrokenPledgeException : Exception
 {
     protected BrokenPledgeException(PledgeViolation violation, PledgeKind expectedKind)
-        : base(Describe(violation, expectedKind), violation.Cause)
+        : base(Describe(violation, expectedKind), violation.Cause ?? violation.Thrown)
     {
         Violation = violation;
     }

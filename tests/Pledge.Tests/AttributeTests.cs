@@ -15,7 +15,7 @@ public sealed class AttributeTests
         Assert.NotNull(usage);
         Assert.True(usage.AllowMultiple);
         Assert.False(usage.Inherited);
-        Assert.Equal(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Constructor, usage.ValidOn);
+        Assert.Equal(AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Constructor | AttributeTargets.Assembly, usage.ValidOn);
         Assert.True(attribute.IsSubclassOf(typeof(ContractMetadataAttribute)));
     }
 
@@ -31,9 +31,27 @@ public sealed class AttributeTests
     }
 
     [Fact]
+    public void Assembly_level_shape_names_the_member()
+    {
+        var requires = new RequiresAttribute(typeof(string), "Substring(int)", "startIndex >= 0");
+        Assert.Equal(typeof(string), requires.DeclaringType);
+        Assert.Equal("Substring(int)", requires.Member);
+        Assert.Equal("startIndex >= 0", requires.Expression);
+
+        var onThrow = new EnsuresOnThrowAttribute(typeof(string), "Substring(int)", typeof(ArgumentOutOfRangeException), "true");
+        Assert.Equal(typeof(string), onThrow.DeclaringType);
+        Assert.Equal(typeof(ArgumentOutOfRangeException), onThrow.ExceptionType);
+
+        Assert.Null(new EnsuresAttribute("x").DeclaringType);
+        Assert.Null(new EnsuresAttribute("x").Member);
+    }
+
+    [Fact]
     public void Metadata_attributes_reject_null_arguments()
     {
         Assert.Throws<ArgumentNullException>(() => new RequiresAttribute(null!));
+        Assert.Throws<ArgumentNullException>(() => new RequiresAttribute(null!, "M()", "x"));
+        Assert.Throws<ArgumentNullException>(() => new RequiresAttribute(typeof(string), null!, "x"));
         Assert.Throws<ArgumentNullException>(() => new EnsuresOnThrowAttribute(null!, "x"));
         Assert.Throws<ArgumentNullException>(() => new EnsuresOnThrowAttribute(typeof(Exception), null!));
     }

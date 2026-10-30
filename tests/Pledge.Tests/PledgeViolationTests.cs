@@ -25,7 +25,7 @@ public sealed class PledgeViolationTests
             CallerLineNumber = 42,
         };
 
-        Assert.Equal("Precondition of Account.Withdraw violated by its caller: amount > 0 (at /src/Program.cs:42)", violation.ToString());
+        Assert.Equal("Precondition of Account.Withdraw violated by its caller: amount > 0 (called from /src/Program.cs:42)", violation.ToString());
     }
 
     [Fact]
@@ -50,6 +50,22 @@ public sealed class PledgeViolationTests
         var violation = new PledgeViolation { Kind = PledgeKind.Invariant, Expression = "Balance >= 0", Member = "Account", Message = "Balance >= 0" };
 
         Assert.Equal("Invariant of Account violated: Balance >= 0", violation.ToString());
+    }
+
+    [Fact]
+    public void Thrown_is_described_for_an_on_throw_postcondition()
+    {
+        var violation = new PledgeViolation
+        {
+            Kind = PledgeKind.Postcondition,
+            Expression = "Balance == Old(Balance)",
+            Member = "Account.Withdraw",
+            Thrown = new InvalidOperationException("account is frozen"),
+        };
+
+        Assert.Equal(
+            "Postcondition of Account.Withdraw violated: Balance == Old(Balance). The member exited with InvalidOperationException: account is frozen",
+            violation.ToString());
     }
 
     [Fact]

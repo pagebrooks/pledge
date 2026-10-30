@@ -8,12 +8,13 @@ them out at build time and checks them through interceptors. Contract violations
 blame attached (caller or callee), not validation failures, so FluentValidation and guard
 clauses keep their jobs.
 
-> **Status: pre-alpha.** Preconditions (`Pledge.Requires`) on methods work end to end through
-> the source generator and interceptors, including the enforcement modes, caller blame with
-> file and line, and a Native AOT sample. Postconditions, `Old()`, analyzers and the testing
-> bridge are next. The full design, semantics and roadmap are in [DESIGN.md](DESIGN.md).
+> **Status: pre-alpha.** The snippet below works today: `Requires`, `Ensures` with `Result<T>()`
+> and `Old()`, and `EnsuresOnThrow` on sync and async methods, checked through the source
+> generator and interceptors, with the enforcement modes, blame with file and line, assembly
+> metadata and a Native AOT sample. Analyzers, code fixes and the testing bridge are next.
+> The full design, semantics and roadmap are in [DESIGN.md](DESIGN.md).
 
-## What it will look like
+## What it looks like
 
 ```csharp
 public decimal Withdraw(decimal amount)

@@ -17,10 +17,13 @@ public sealed record PledgeViolation
     // The author's message, when one was given. Null means the expression text is the message.
     public string? Message { get; init; }
 
-    // Call site of a precondition violation, captured at generation time. Null for callee-side kinds.
+    // The call that triggered the check, captured at generation time. For a precondition this is where the blame lies.
     public string? CallerFilePath { get; init; }
 
     public int CallerLineNumber { get; init; }
+
+    // For EnsuresOnThrow: the exception the member exited with when the contract was checked.
+    public Exception? Thrown { get; init; }
 
     // Set when the contract expression itself threw instead of producing a bool.
     public Exception? Cause { get; init; }
@@ -40,7 +43,12 @@ public sealed record PledgeViolation
 
         if (CallerFilePath is not null)
         {
-            text += $" (at {CallerFilePath}:{CallerLineNumber.ToString(CultureInfo.InvariantCulture)})";
+            text += $" (called from {CallerFilePath}:{CallerLineNumber.ToString(CultureInfo.InvariantCulture)})";
+        }
+
+        if (Thrown is not null)
+        {
+            text += $". The member exited with {Thrown.GetType().Name}: {Thrown.Message}";
         }
 
         if (Cause is not null)

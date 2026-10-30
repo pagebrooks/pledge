@@ -18,7 +18,7 @@ internal static class GeneratorHarness
     private static readonly Lazy<ImmutableArray<MetadataReference>> _references = new(LoadReferences);
     private static int _assemblyCounter;
 
-    public static GeneratorRun Run(string source, string mode = "Enforce", bool interceptorsEnabled = true, params string[] extraSources)
+    public static GeneratorRun Run(string source, string mode = "Enforce", bool interceptorsEnabled = true, string? metadata = null, params string[] extraSources)
     {
         var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
         if (interceptorsEnabled)
@@ -39,7 +39,7 @@ internal static class GeneratorHarness
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             [new PledgeGenerator().AsSourceGenerator()],
             parseOptions: parseOptions,
-            optionsProvider: new OptionsProvider(mode),
+            optionsProvider: new OptionsProvider(mode, metadata),
             driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
 
         return GeneratorRun.Create(driver, compilation);
@@ -59,28 +59,29 @@ internal static class GeneratorHarness
             .ToImmutableArray();
     }
 
-    private sealed class OptionsProvider(string? mode) : AnalyzerConfigOptionsProvider
+    private sealed class OptionsProvider(string? mode, string? metadata) : AnalyzerConfigOptionsProvider
     {
-        public override AnalyzerConfigOptions GlobalOptions { get; } = new Options(mode);
+        public override AnalyzerConfigOptions GlobalOptions { get; } = new Options(mode, metadata);
 
         public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => Options.Empty;
 
         public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Options.Empty;
 
-        private sealed class Options(string? mode) : AnalyzerConfigOptions
+        private sealed class Options(string? mode, string? metadata) : AnalyzerConfigOptions
         {
-            public static readonly Options Empty = new(null);
+            public static readonly Options Empty = new(null, null);
 
             public override bool TryGetValue(string key, out string value)
             {
-                if (mode is not null && key == "build_property.PledgeMode")
+                var found = key switch
                 {
-                    value = mode;
-                    return true;
-                }
+                    "build_property.PledgeMode" => mode,
+                    "build_property.PledgeMetadata" => metadata,
+                    _ => null,
+                };
 
-                value = null!;
-                return false;
+                value = found!;
+                return found is not null;
             }
         }
     }
@@ -109,7 +110,25 @@ internal sealed class GeneratorRun
     public IReadOnlyDictionary<string, string> GeneratedSources =>
         Result.GeneratedTrees.ToDictionary(tree => Path.GetFileName(tree.FilePath), tree => tree.ToString(), StringComparer.Ordinal);
 
-    public string SingleGeneratedSource => Assert.Single(GeneratedSources).Value;
+    // The wrapper files, leaving the metadata file aside.
+    public IReadOnlyDictionary<string, string> Wrappers =>
+        GeneratedSources.Where(pair => pair.Key != "PledgeContracts.Metadata.g.cs").ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+
+    public string? Metadata => GeneratedSources.TryGetValue("PledgeContracts.Metadata.g.cs", out var source) ? source : null;
+
+    public string SingleWrapper => Assert.Single(Wrappers).Value;
+
+    // Emits the compilation and loads it, so tests can reflect over what the generator put into the assembly.
+    public System.Reflection.Assembly Load()
+    {
+        AssertCompiles();
+
+        using var stream = new MemoryStream();
+        var emitted = OutputCompilation.Emit(stream);
+        Assert.True(emitted.Success, string.Join(Environment.NewLine, emitted.Diagnostics.Select(d => d.ToString())));
+        stream.Position = 0;
+        return new AssemblyLoadContext(OutputCompilation.AssemblyName).LoadFromStream(stream);
+    }
 
     public static GeneratorRun Create(GeneratorDriver driver, Compilation compilation)
     {
@@ -133,14 +152,7 @@ internal sealed class GeneratorRun
     // Emits the compilation and calls a public static method on it, unwrapping reflection's exception wrapper.
     public object? Invoke(string typeName, string methodName)
     {
-        AssertCompiles();
-
-        using var stream = new MemoryStream();
-        var emitted = OutputCompilation.Emit(stream);
-        Assert.True(emitted.Success, string.Join(Environment.NewLine, emitted.Diagnostics.Select(d => d.ToString())));
-        stream.Position = 0;
-
-        var assembly = new AssemblyLoadContext(OutputCompilation.AssemblyName).LoadFromStream(stream);
+        var assembly = Load();
         var type = assembly.GetType(typeName) ?? throw new InvalidOperationException($"Type {typeName} not found in the snippet.");
         var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static) ?? throw new InvalidOperationException($"Method {methodName} not found.");
 

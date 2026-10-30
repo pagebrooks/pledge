@@ -1,13 +1,19 @@
 #nullable enable
 PledgeContracts.ContractMetadataAttribute
 PledgeContracts.ContractMetadataAttribute.ContractMetadataAttribute(string! expression) -> void
+PledgeContracts.ContractMetadataAttribute.ContractMetadataAttribute(System.Type! declaringType, string! member, string! expression) -> void
+PledgeContracts.ContractMetadataAttribute.DeclaringType.get -> System.Type?
 PledgeContracts.ContractMetadataAttribute.Expression.get -> string!
+PledgeContracts.ContractMetadataAttribute.Member.get -> string?
 PledgeContracts.EnsuresAttribute
 PledgeContracts.EnsuresAttribute.EnsuresAttribute(string! expression) -> void
+PledgeContracts.EnsuresAttribute.EnsuresAttribute(System.Type! declaringType, string! member, string! expression) -> void
 PledgeContracts.EnsuresOnThrowAttribute
+PledgeContracts.EnsuresOnThrowAttribute.EnsuresOnThrowAttribute(System.Type! declaringType, string! member, System.Type! exceptionType, string! expression) -> void
 PledgeContracts.EnsuresOnThrowAttribute.EnsuresOnThrowAttribute(System.Type! exceptionType, string! expression) -> void
 PledgeContracts.EnsuresOnThrowAttribute.ExceptionType.get -> System.Type!
 PledgeContracts.PureAttribute
 PledgeContracts.PureAttribute.PureAttribute() -> void
 PledgeContracts.RequiresAttribute
 PledgeContracts.RequiresAttribute.RequiresAttribute(string! expression) -> void
+PledgeContracts.RequiresAttribute.RequiresAttribute(System.Type! declaringType, string! member, string! expression) -> void
