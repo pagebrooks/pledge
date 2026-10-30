@@ -63,10 +63,14 @@ public sealed class MetadataGenerationTests
         Assert.Equal(3, run.Load().GetCustomAttributes<ContractMetadataAttribute>().Count(attribute => attribute.Member == "Withdraw(decimal)"));
     }
 
-    [Fact]
-    public void Metadata_can_be_switched_off()
+    [Theory]
+    [InlineData("false")]
+    [InlineData("False")]
+    [InlineData("no")]
+    [InlineData("off")]
+    public void Metadata_can_be_switched_off_with_any_MSBuild_spelling_of_false(string value)
     {
-        var run = GeneratorHarness.Run(Source, metadata: "false");
+        var run = GeneratorHarness.Run(Source, metadata: value);
 
         Assert.Null(run.Metadata);
         Assert.Empty(run.Load().GetCustomAttributes<ContractMetadataAttribute>());

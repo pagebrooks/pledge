@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 using PledgeContracts.Roslyn.Generator;
 
 namespace PledgeContracts.Roslyn;
@@ -44,7 +45,7 @@ public sealed class PledgeGenerator : IIncrementalGenerator
             .WithTrackingName(TrackingNames.Misplaced);
 
         var options = context.AnalyzerConfigOptionsProvider.Select(static (provider, _) => (
-            Mode: PledgeModes.Parse(provider.GlobalOptions.TryGetValue(PledgeModes.ModeProperty, out var mode) ? mode : null),
+            Modes: PledgeModes.Parse(Option(provider, PledgeModes.ModeProperty), Option(provider, PledgeModes.PreconditionsProperty), Option(provider, PledgeModes.PostconditionsProperty)),
             Metadata: PledgeModes.ParseMetadata(provider.GlobalOptions.TryGetValue(PledgeModes.MetadataProperty, out var metadata) ? metadata : null)));
 
         var interceptorsEnabled = context.ParseOptionsProvider.Select(static (parseOptions, _) => InterceptorsEnabled(parseOptions));
@@ -58,8 +59,11 @@ public sealed class PledgeGenerator : IIncrementalGenerator
 
         var input = collected.Combine(callSites.Collect()).Combine(options.Combine(interceptorsEnabled));
         context.RegisterSourceOutput(input, static (productionContext, input) =>
-            EmitWrappers(productionContext, input.Left.Left, input.Left.Right, input.Right.Left.Mode, input.Right.Right));
+            EmitWrappers(productionContext, input.Left.Left, input.Left.Right, input.Right.Left.Modes, input.Right.Right));
     }
+
+    private static string? Option(AnalyzerConfigOptionsProvider provider, string key) =>
+        provider.GlobalOptions.TryGetValue(key, out var value) ? value : null;
 
     private static bool InterceptorsEnabled(ParseOptions options)
     {
@@ -104,17 +108,25 @@ public sealed class PledgeGenerator : IIncrementalGenerator
         SourceProductionContext context,
         ImmutableArray<ContractedMethod> methods,
         ImmutableArray<CallSite> callSites,
-        PledgeMode mode,
+        ModeSettings modes,
         bool interceptorsEnabled)
     {
-        if (mode == PledgeMode.Ignore || methods.IsEmpty)
+        // Only what the modes leave enabled is generated; a method whose every contract kind is ignored is not
+        // checked anywhere, so it gets neither a wrapper nor PLEDGE006.
+        var enabled = methods
+            .Where(static method => method.IsGenerable)
+            .Select(method => method.Enabled(modes))
+            .OfType<ContractedMethod>()
+            .ToList();
+
+        if (enabled.Count == 0)
         {
             return;
         }
 
         if (!interceptorsEnabled)
         {
-            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.GeneratorNotActive, methods[0].Site.ToLocation(), WrapperEmitter.Namespace));
+            context.ReportDiagnostic(Diagnostic.Create(Diagnostics.GeneratorNotActive, enabled[0].Site.ToLocation(), WrapperEmitter.Namespace));
             return;
         }
 
@@ -122,14 +134,9 @@ public sealed class PledgeGenerator : IIncrementalGenerator
             .GroupBy(site => site.MethodKey, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => (IReadOnlyList<CallSite>)group.OrderBy(site => site.FilePath, StringComparer.Ordinal).ThenBy(site => site.Line).ToList(), StringComparer.Ordinal);
 
-        foreach (var method in methods.OrderBy(method => method.HintName, StringComparer.Ordinal))
+        foreach (var method in enabled.OrderBy(method => method.HintName, StringComparer.Ordinal))
         {
             context.CancellationToken.ThrowIfCancellationRequested();
-
-            if (!method.IsGenerable)
-            {
-                continue;
-            }
 
             if (!sitesByMethod.TryGetValue(method.Key, out var sites))
             {
@@ -137,7 +144,7 @@ public sealed class PledgeGenerator : IIncrementalGenerator
                 continue;
             }
 
-            context.AddSource(method.HintName, WrapperEmitter.Emit(method, sites, mode));
+            context.AddSource(method.HintName, WrapperEmitter.Emit(method, sites, modes));
         }
     }
 }

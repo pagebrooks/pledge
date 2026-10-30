@@ -39,7 +39,14 @@ internal static class GeneratorHarness
         return CSharpCompilation.Create("PledgeSnippet" + Interlocked.Increment(ref _assemblyCounter), trees, _references.Value, CompilationOptions);
     }
 
-    public static GeneratorRun Run(string source, string mode = "Enforce", bool interceptorsEnabled = true, string? metadata = null, params string[] extraSources)
+    public static GeneratorRun Run(
+        string source,
+        string mode = "Enforce",
+        bool interceptorsEnabled = true,
+        string? metadata = null,
+        string? preconditions = null,
+        string? postconditions = null,
+        params string[] extraSources)
     {
         var parseOptions = ParseOptions(interceptorsEnabled);
         var compilation = CreateCompilation(new[] { source }.Concat(extraSources), parseOptions);
@@ -47,7 +54,13 @@ internal static class GeneratorHarness
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             [new PledgeGenerator().AsSourceGenerator()],
             parseOptions: parseOptions,
-            optionsProvider: new OptionsProvider(mode, metadata),
+            optionsProvider: new OptionsProvider(new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["build_property.PledgeMode"] = mode,
+                ["build_property.PledgeMetadata"] = metadata,
+                ["build_property.PledgePreconditions"] = preconditions,
+                ["build_property.PledgePostconditions"] = postconditions,
+            }),
             driverOptions: new GeneratorDriverOptions(IncrementalGeneratorOutputKind.None, trackIncrementalGeneratorSteps: true));
 
         return GeneratorRun.Create(driver, compilation);
@@ -67,27 +80,22 @@ internal static class GeneratorHarness
             .ToImmutableArray();
     }
 
-    private sealed class OptionsProvider(string? mode, string? metadata) : AnalyzerConfigOptionsProvider
+    // Global options the way Pledge.targets hands them over; a null value is a property that was never set.
+    private sealed class OptionsProvider(IReadOnlyDictionary<string, string?> globals) : AnalyzerConfigOptionsProvider
     {
-        public override AnalyzerConfigOptions GlobalOptions { get; } = new Options(mode, metadata);
+        public override AnalyzerConfigOptions GlobalOptions { get; } = new Options(globals);
 
         public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => Options.Empty;
 
         public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => Options.Empty;
 
-        private sealed class Options(string? mode, string? metadata) : AnalyzerConfigOptions
+        private sealed class Options(IReadOnlyDictionary<string, string?> values) : AnalyzerConfigOptions
         {
-            public static readonly Options Empty = new(null, null);
+            public static readonly Options Empty = new(new Dictionary<string, string?>());
 
             public override bool TryGetValue(string key, out string value)
             {
-                var found = key switch
-                {
-                    "build_property.PledgeMode" => mode,
-                    "build_property.PledgeMetadata" => metadata,
-                    _ => null,
-                };
-
+                var found = values.TryGetValue(key, out var candidate) ? candidate : null;
                 value = found!;
                 return found is not null;
             }

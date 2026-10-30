@@ -37,15 +37,21 @@ class; a C# type cannot share its name with a root namespace without `Pledge.Req
 binding to the namespace instead, so the namespace takes the longer name and is typed once per
 file.
 
-Enforcement is an MSBuild property with C++26's vocabulary: `Ignore` (byte-identical IL to a
-project without the package, the default in Release), `Observe`, `Enforce` (default in Debug)
-and `EnforceFailFast`:
+Enforcement is an MSBuild property with C++26's vocabulary: `Ignore` (the default in Release),
+`Observe`, `Enforce` (the default in Debug) and `EnforceFailFast`. Each kind of contract can
+override it:
 
 ```xml
 <PropertyGroup>
   <PledgeMode>Enforce</PledgeMode>
+  <PledgePostconditions>Observe</PledgePostconditions>
 </PropertyGroup>
 ```
+
+`Ignore` compiles to the assembly you would get without Pledge: CI builds a contracted project
+in `Ignore` and the same project with the contract lines deleted and no package, and checks the
+two are byte-identical. Set `<PledgeMetadata>false</PledgeMetadata>` too if you want that for a
+shipped library; by default the contracts are recorded as assembly attributes for tools to read.
 
 A broken precondition throws `PreconditionViolationException` whose message names the contract,
 the member and the call site:
@@ -66,7 +72,7 @@ Precondition of Account.Withdraw violated by its caller: insufficient funds [amo
 | `src/Pledge.Testing.Xunit` | `Pledge.Testing.Xunit` | xUnit.net v3 adapter. |
 | `src/Pledge.Testing.TUnit` | `Pledge.Testing.TUnit` | TUnit adapter. |
 | `docs/rules` | | One page per PLEDGE diagnostic, linked from the diagnostics themselves. |
-| `tests/` | | xUnit v3 test projects, one per area. `Pledge.Integration.Tests` consumes the generator the way a package consumer does. |
+| `tests/` | | xUnit v3 test projects, one per area. `Pledge.Integration.Tests` consumes the generator the way a package consumer does; `Pledge.Build.Tests` builds throwaway projects with the real SDK to check the mode properties, each mode's behaviour and the byte-identical `Ignore` output. |
 | `samples/BankAccount` | | The bank-account domain under contracts. |
 
 ## Building

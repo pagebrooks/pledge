@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Builds throwaway consumer projects with the real SDK and checks what comes out: mode properties and their
+    validation, each mode's behaviour at run time, and Ignore mode's byte-identical assemblies. The fixtures load
+    Pledge, Pledge.Attributes and the Pledge.Roslyn analyzer from copies of this project's output and import
+    Pledge.targets from the source tree, so they see exactly what this commit would ship.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Pledge/Pledge.csproj" />
+    <!-- For its output only: the fixtures load Pledge.Roslyn.dll as an analyzer from this project's bin folder. -->
+    <ProjectReference Include="../../src/Pledge.Roslyn/Pledge.Roslyn.csproj" />
+    <PackageReference Include="ICSharpCode.Decompiler" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Fixture sources are compiled by the fixture projects, never by this one. -->
+    <Compile Remove="Fixtures/**" />
+    <None Include="Fixtures/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

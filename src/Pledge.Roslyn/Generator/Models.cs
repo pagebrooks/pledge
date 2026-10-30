@@ -98,6 +98,25 @@ internal sealed record ContractedMethod(
 
     // Postconditions and snapshots need the original call inside a try block; preconditions alone just forward.
     public bool WrapsBody => Snapshots.Count > 0 || Contracts.Any(contract => contract.Kind != ContractKind.Precondition);
+
+    // The contracts that compile under the given modes: a kind in Ignore drops out, and the Old snapshots go with
+    // the postconditions, which are the only contracts that read them. Null when nothing is left to check.
+    public ContractedMethod? Enabled(ModeSettings modes)
+    {
+        var contracts = Contracts.Where(contract => modes.For(contract.Kind) != PledgeMode.Ignore).ToEquatableArray();
+        if (contracts.Count == 0)
+        {
+            return null;
+        }
+
+        return contracts.Count == Contracts.Count
+            ? this
+            : this with
+            {
+                Contracts = contracts,
+                Snapshots = modes.Postconditions == PledgeMode.Ignore ? EquatableArray<SnapshotModel>.Empty : Snapshots,
+            };
+    }
 }
 
 // One interceptable invocation of a contracted method. Version and Data are what [InterceptsLocation] needs.

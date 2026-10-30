@@ -2,12 +2,17 @@
 
   <!--
     Imported after the project file, so a <PledgeMode> set there wins and $(Configuration) is known.
-    Default: Enforce in Debug, Ignore in Release. The property is handed to the generator as
-    build_property.PledgeMode; an unknown value fails the build here rather than being guessed at.
+    Default: Enforce in Debug, Ignore in Release. PledgePreconditions, PledgePostconditions and PledgeInvariants
+    override it per kind of contract and default to it; EnsuresOnThrow counts as a postcondition, and invariants
+    are accepted now so a project can set them before they ship in v1.0. The values reach the generator as
+    build_property.* through CompilerVisibleProperty; an unknown value fails the build rather than being guessed at.
   -->
   <PropertyGroup>
     <PledgeMode Condition="'$(PledgeMode)' == '' and '$(Configuration)' == 'Debug'">Enforce</PledgeMode>
     <PledgeMode Condition="'$(PledgeMode)' == ''">Ignore</PledgeMode>
+    <PledgePreconditions Condition="'$(PledgePreconditions)' == ''">$(PledgeMode)</PledgePreconditions>
+    <PledgePostconditions Condition="'$(PledgePostconditions)' == ''">$(PledgeMode)</PledgePostconditions>
+    <PledgeInvariants Condition="'$(PledgeInvariants)' == ''">$(PledgeMode)</PledgeInvariants>
     <!-- The [Requires]/[Ensures] metadata attributes are documentation, not checks: on in every mode unless turned off. -->
     <PledgeMetadata Condition="'$(PledgeMetadata)' == ''">true</PledgeMetadata>
   </PropertyGroup>
@@ -23,24 +28,41 @@
 
   <ItemGroup>
     <CompilerVisibleProperty Include="PledgeMode" />
+    <CompilerVisibleProperty Include="PledgePreconditions" />
+    <CompilerVisibleProperty Include="PledgePostconditions" />
+    <CompilerVisibleProperty Include="PledgeInvariants" />
     <CompilerVisibleProperty Include="PledgeMetadata" />
   </ItemGroup>
 
   <Target Name="PledgeValidateMode" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_PledgeModeSetting Include="PledgeMode" Value="$(PledgeMode)" />
+      <_PledgeModeSetting Include="PledgePreconditions" Value="$(PledgePreconditions)" />
+      <_PledgeModeSetting Include="PledgePostconditions" Value="$(PledgePostconditions)" />
+      <_PledgeModeSetting Include="PledgeInvariants" Value="$(PledgeInvariants)" />
+    </ItemGroup>
     <Error
-      Condition="'$(PledgeMode)' != 'Ignore' and '$(PledgeMode)' != 'Observe' and '$(PledgeMode)' != 'Enforce' and '$(PledgeMode)' != 'EnforceFailFast'"
-      Text="PledgeMode '$(PledgeMode)' is not recognized. Use Ignore, Observe, Enforce or EnforceFailFast." />
+      Condition="'%(_PledgeModeSetting.Value)' != 'Ignore' and '%(_PledgeModeSetting.Value)' != 'Observe' and '%(_PledgeModeSetting.Value)' != 'Enforce' and '%(_PledgeModeSetting.Value)' != 'EnforceFailFast'"
+      Text="%(_PledgeModeSetting.Identity) '%(_PledgeModeSetting.Value)' is not recognized. Use Ignore, Observe, Enforce or EnforceFailFast." />
+    <!-- MSBuild compares booleans loosely: yes and on equal true, no and off equal false, and the generator agrees. -->
+    <Error
+      Condition="'$(PledgeMetadata)' != 'true' and '$(PledgeMetadata)' != 'false'"
+      Text="PledgeMetadata '$(PledgeMetadata)' is not recognized. Use true or false." />
   </Target>
 
   <!--
-    Targets run after every import, so this sees the final value. It fails only when something imported after this
-    file (a Directory.Build.targets, for instance) replaced the property instead of appending to it. The generator's
-    PLEDGE005 covers what this cannot see, such as a package reference with ExcludeAssets="build".
+    Targets run after every import, so this sees the final value. It fails only when something replaced the
+    property after Pledge.targets appended to it: an import later in the build (a Directory.Build.targets, for
+    instance) or a global property from the command line. Nothing is generated when every kind is Ignore, so the
+    check is skipped then. The generator's PLEDGE005 covers what this cannot see, such as ExcludeAssets="build".
   -->
-  <Target Name="PledgeValidateInterceptors" BeforeTargets="CoreCompile" Condition="'$(PledgeMode)' != 'Ignore'">
+  <Target
+    Name="PledgeValidateInterceptors"
+    BeforeTargets="CoreCompile"
+    Condition="'$(PledgePreconditions)' != 'Ignore' or '$(PledgePostconditions)' != 'Ignore' or '$(PledgeInvariants)' != 'Ignore'">
     <Error
       Condition="!$(InterceptorsNamespaces.Contains('PledgeContracts.Generated'))"
-      Text="InterceptorsNamespaces does not contain PledgeContracts.Generated, so the compiler would reject Pledge's generated checks. Something imported after Pledge.targets replaced the property; append to it instead: &lt;InterceptorsNamespaces&gt;%24(InterceptorsNamespaces);PledgeContracts.Generated&lt;/InterceptorsNamespaces&gt;" />
+      Text="InterceptorsNamespaces does not contain PledgeContracts.Generated, so the compiler would reject Pledge's generated checks. Something replaced the property after Pledge.targets appended to it, either an import later in the build or a global -p:InterceptorsNamespaces=... property; append to it instead: &lt;InterceptorsNamespaces&gt;%24(InterceptorsNamespaces);PledgeContracts.Generated&lt;/InterceptorsNamespaces&gt;" />
   </Target>
 
 </Project>

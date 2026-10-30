@@ -172,6 +172,8 @@ namespace PledgeContracts.Generated
 </PropertyGroup>
 ```
 
+`PledgePreconditions`, `PledgePostconditions` and `PledgeInvariants` default to `PledgeMode` and override it for one kind; `EnsuresOnThrow` is a postcondition. A kind in `Ignore` drops out of the wrappers entirely, and `Old` snapshots go with the postconditions, so ignoring postconditions also removes the snapshot locals. A method whose every kind is ignored gets no wrapper and no PLEDGE006. `PledgeInvariants` is accepted and validated now so projects can set it ahead of v1.0; it has nothing to control until invariants ship. Values are case-insensitive. `PledgeMetadata` takes MSBuild booleans, so `false`, `no` and `off` all turn the attributes off, and the generator reads them the same way the targets validate them (found Oct 29, 2026: MSBuild compares `yes`/`on`/`no`/`off` as booleans in conditions).
+
 **Violation handler.** `PledgeRuntime.ViolationHandler` is a static delegate receiving a `PledgeViolation` record (kind, expression text, member, blame, caller file/line from `[CallerFilePath]`/`[CallerLineNumber]` captured at generation time). Default in `Enforce` throws; teams wire it to logging in `Observe`. This is the C++26 `handle_contract_violation` idea and it is what makes `Observe` useful for rolling contracts into an existing codebase without breaking it.
 
 **Exceptions.** `BrokenPledgeException` (abstract base) with `PreconditionViolationException`, `PostconditionViolationException` and `InvariantViolationException`. Preconditions can optionally map to `ArgumentException` subtypes for public API surfaces via `Pledge.Requires<TException>(...)`, which is the compromise the csharplang thread settled on after the fail-fast debate.
@@ -279,7 +281,7 @@ The install experience and the overhead numbers are launch content, not aftertho
 
 | Scenario | Target |
 | --- | --- |
-| `Ignore` mode | Byte-identical IL to a project without the package, verified in CI by comparing assemblies |
+| `Ignore` mode | Byte-identical assembly to the same project built without the package and with the contract lines deleted, in Debug and Release, with `PledgeMetadata` off and `DebugType` `none`. With a PDB, only the identity derived from the PDB differs (MVID, timestamp, debug directory), because the PDB records the deleted lines. With metadata on, only the assembly-level attributes and the `Pledge.Attributes` reference are added. Verified on every CI run by `tests/Pledge.Build.Tests`, which builds both with the real SDK and prints ILSpy's disassembly diff on failure |
 | `Enforce`, precondition only | ≤ cost of the equivalent hand-written `if` + throw; no allocation |
 | `Enforce`, postcondition with one `Old` of a value type | One local; no allocation |
 | `Enforce`, async method | One additional state machine (the wrapper); measured against a hand-written wrapper |

@@ -7,6 +7,8 @@ namespace PledgeContracts.Roslyn.Generator;
 // the Old snapshots, calls the original and runs the postconditions, plus one tiny interceptor stub per call site
 // whose #line directive hands the caller's file and line to __Checked through [CallerFilePath]/[CallerLineNumber].
 // Async methods split the part after the snapshots into an async __Awaited so preconditions still throw synchronously.
+// The method passed in already holds only the contracts enabled under the modes (ContractedMethod.Enabled); each
+// check reports through the PledgeRuntime member for its own kind's mode.
 internal static class WrapperEmitter
 {
     public const string Namespace = "PledgeContracts.Generated";
@@ -14,10 +16,12 @@ internal static class WrapperEmitter
     private const string CallerParameters =
         "[global::System.Runtime.CompilerServices.CallerFilePath] string __callerFilePath = \"\", [global::System.Runtime.CompilerServices.CallerLineNumber] int __callerLineNumber = 0";
 
-    public static string Emit(ContractedMethod method, IReadOnlyList<CallSite> callSites, PledgeMode mode)
+    public static string Emit(ContractedMethod method, IReadOnlyList<CallSite> callSites, ModeSettings modes)
     {
         var builder = new StringBuilder();
-        var report = "global::PledgeContracts.PledgeRuntime." + PledgeModes.ReportMethod(mode);
+        var report = new Reporters(
+            "global::PledgeContracts.PledgeRuntime." + PledgeModes.ReportMethod(modes.Preconditions),
+            "global::PledgeContracts.PledgeRuntime." + PledgeModes.ReportMethod(modes.Postconditions));
         var returnKeyword = method.ReturnsVoid ? string.Empty : "return ";
         var parameters = Join(method.Parameters.Select(p => p.Declaration));
         var arguments = Join(method.Parameters.Select(p => p.Argument));
@@ -118,7 +122,7 @@ internal static class WrapperEmitter
 
     // The original call inside a try, EnsuresOnThrow clauses derived-first so every catch is reachable, then the
     // postconditions. Cancellation bypasses the on-throw checks unless a contract names a cancellation exception.
-    private static void AppendBody(StringBuilder builder, ContractedMethod method, string call, string report, bool isAsync)
+    private static void AppendBody(StringBuilder builder, ContractedMethod method, string call, Reporters report, bool isAsync)
     {
         var await = isAsync ? "await " : string.Empty;
         if (method.HasResult)
@@ -173,8 +177,9 @@ internal static class WrapperEmitter
         }
     }
 
-    private static void AppendCheck(StringBuilder builder, ContractedMethod method, ContractModel contract, string report, string? thrown, string indent)
+    private static void AppendCheck(StringBuilder builder, ContractedMethod method, ContractModel contract, Reporters reporters, string? thrown, string indent)
     {
+        var report = reporters.For(contract.Kind);
         var ok = "__pledgeOk" + contract.Index;
         var line = $"#line {contract.Site.Line} \"{contract.Site.FilePath}\"";
 
@@ -221,6 +226,11 @@ internal static class WrapperEmitter
         }
 
         builder.AppendLine($"{indent}}});");
+    }
+
+    private sealed record Reporters(string Preconditions, string Postconditions)
+    {
+        public string For(ContractKind kind) => kind == ContractKind.Precondition ? Preconditions : Postconditions;
     }
 
     private static string Literal(string value) => SymbolDisplay.FormatLiteral(value, quote: true);
