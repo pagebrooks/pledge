@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Testing bridge">
-    <PackageVersion Include="CsCheck" Version="5.0.0" />
+    <PackageVersion Include="CsCheck" Version="5.0.1" />
     <PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.2" />
     <PackageVersion Include="TUnit.Core" Version="1.76.45" />
   </ItemGroup>
