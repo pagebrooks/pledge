@@ -1,0 +1,515 @@
+/* Colors come from Infima, so the explainer follows the site's theme. The execution pointer is a muted honey that
+   sits with the site's green, tinted over the panel rather than the debugger's full yellow. */
+.root {
+  --lift-accent: var(--ifm-color-primary);
+  --lift-accent-soft: color-mix(in srgb, var(--ifm-color-primary) 14%, transparent);
+  --lift-bad: var(--ifm-color-danger);
+  --lift-bad-soft: color-mix(in srgb, var(--ifm-color-danger) 13%, transparent);
+  --lift-surface: var(--ifm-background-surface-color);
+  --lift-code: var(--ifm-color-emphasis-100);
+  --lift-line: var(--ifm-color-emphasis-300);
+  --lift-muted: var(--ifm-color-emphasis-700);
+  --lift-keyword: var(--site-code-keyword);
+  --lift-string: var(--site-code-string);
+  --lift-ip-mark: #c99a2e;
+  --lift-ip-rim: #7a5a12;
+  --lift-ip: color-mix(in srgb, var(--lift-ip-mark) 24%, var(--lift-surface));
+  --lift-mono: var(--ifm-font-family-monospace);
+
+  position: relative;
+  container-type: inline-size;
+  display: grid;
+  gap: 14px;
+  margin: 1.5rem 0 2rem;
+  padding: 18px;
+  border: 1px solid var(--lift-line);
+  border-radius: 12px;
+  background: var(--lift-surface);
+}
+
+:global([data-theme='dark']) .root {
+  --lift-ip-mark: #ddb352;
+  --lift-ip-rim: #1b1b1d;
+  --lift-ip: color-mix(in srgb, var(--lift-ip-mark) 20%, var(--lift-surface));
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+}
+
+.play {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--lift-accent);
+  background: var(--lift-accent-soft);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--lift-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmented button {
+  font: 500 0.85rem/1 var(--ifm-font-family-base);
+  color: var(--ifm-font-color-base);
+  background: transparent;
+  border: 0;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--lift-line);
+}
+
+.segmented button[aria-pressed='true'] {
+  color: var(--ifm-color-white);
+  background: var(--lift-accent);
+}
+
+:global([data-theme='dark']) .segmented button[aria-pressed='true'] {
+  color: var(--ifm-color-gray-900);
+}
+
+.play:focus-visible,
+.segmented button:focus-visible {
+  outline: 2px solid var(--lift-accent);
+  outline-offset: 2px;
+}
+
+.phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phases li {
+  margin: 0;
+  padding: 6px 9px;
+  border: 1px solid var(--lift-line);
+  border-radius: 999px;
+  font: 600 0.7rem/1 var(--lift-mono);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--lift-muted);
+  transition: color 0.3s, background 0.3s, border-color 0.3s;
+}
+
+.phases li.phaseOn {
+  color: var(--lift-accent);
+  border-color: var(--lift-accent);
+  background: var(--lift-accent-soft);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px 56px;
+  align-items: start;
+}
+
+.column {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.panel {
+  display: grid;
+  min-width: 0;
+}
+
+.tab {
+  justify-self: start;
+  display: flex;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--lift-line);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: var(--lift-code);
+  font: 600 0.75rem/1 var(--lift-mono);
+  color: var(--lift-muted);
+}
+
+.generated {
+  color: var(--lift-accent);
+}
+
+.code {
+  display: block;
+  min-height: 3.5em;
+  padding: 8px 0;
+  overflow-x: auto;
+  border: 1px solid var(--lift-line);
+  border-radius: 0 8px 8px 8px;
+  background: var(--lift-code);
+  font: 0.78rem/1.75 var(--lift-mono);
+  color: var(--ifm-font-color-base);
+}
+
+.line {
+  position: relative;
+  display: block;
+  padding-left: 22px;
+  padding-right: 14px;
+  white-space: pre;
+  transition: background 0.3s, opacity 0.45s, color 0.3s;
+}
+
+/* Out of the text flow, so the pointer appearing never changes the line's height. */
+.gutter {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The debugger's current-statement arrow, with a thin rim so it reads against the tinted line. */
+.pointer {
+  display: block;
+  filter: drop-shadow(0 0 0.5px var(--lift-ip-rim));
+}
+
+.pointer::before {
+  content: '';
+  display: block;
+  width: 12px;
+  height: 11px;
+  background: var(--lift-ip-mark);
+  clip-path: polygon(0 32%, 52% 32%, 52% 0, 100% 50%, 52% 100%, 52% 68%, 0 68%);
+}
+
+.ip {
+  background: var(--lift-ip);
+}
+
+.keyword {
+  color: var(--lift-keyword);
+}
+
+.string {
+  color: var(--lift-string);
+}
+
+.pledge {
+  color: var(--lift-accent);
+  font-weight: 600;
+}
+
+.lifting {
+  background: var(--lift-accent-soft);
+}
+
+.gone {
+  opacity: 0.32;
+}
+
+.pending {
+  visibility: hidden;
+}
+
+.fresh {
+  animation: liftFadeIn 0.5s ease both;
+}
+
+.eval {
+  background: var(--lift-accent-soft);
+}
+
+.fail,
+.blame {
+  background: var(--lift-bad-soft);
+  box-shadow: inset 3px 0 0 var(--lift-bad);
+}
+
+.fail.ip,
+.blame.ip {
+  background: var(--lift-ip);
+}
+
+.badge {
+  margin-left: 12px;
+  padding: 2px 7px;
+  border: 1px solid var(--lift-line);
+  border-radius: 999px;
+  font: 600 0.68rem/1 var(--lift-mono);
+  vertical-align: 1px;
+  animation: liftPop 0.35s ease both;
+}
+
+.badge.ok {
+  color: var(--lift-accent);
+  background: var(--lift-accent-soft);
+  border-color: var(--lift-accent);
+}
+
+.badge.bad {
+  color: var(--lift-bad);
+  background: var(--lift-bad-soft);
+  border-color: var(--lift-bad);
+}
+
+.badge.info {
+  color: var(--lift-muted);
+  background: var(--lift-surface);
+}
+
+.placeholder {
+  display: block;
+  padding: 4px 14px;
+  font-family: var(--ifm-font-family-base);
+  color: var(--lift-muted);
+  white-space: normal;
+}
+
+.note {
+  min-height: 1.6em;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--lift-muted);
+}
+
+.outcome {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--lift-line);
+  border-radius: 10px;
+  font: 0.78rem/1.6 var(--lift-mono);
+  overflow-wrap: anywhere;
+  animation: liftRise 0.4s ease both;
+}
+
+.outcome.ok {
+  background: var(--lift-accent-soft);
+  border-color: var(--lift-accent);
+}
+
+.outcome.ok strong {
+  color: var(--lift-accent);
+}
+
+.outcome.bad {
+  background: var(--lift-bad-soft);
+  border-color: var(--lift-bad);
+}
+
+.outcome.bad strong {
+  color: var(--lift-bad);
+}
+
+.outcome.neutral {
+  background: var(--lift-code);
+}
+
+/* Starts and ends as a plain line of code; the flight keyframes raise it into a card and set it back down. The
+   negative margin takes up its padding and border, so its text sits exactly where the line's text does. */
+.ghost {
+  position: absolute;
+  z-index: 3;
+  margin: -1px 0 0 -7px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font: 0.78rem/1.75 var(--lift-mono);
+  color: var(--ifm-font-color-base);
+  white-space: pre;
+  pointer-events: none;
+  will-change: transform;
+  transform-origin: left center;
+}
+
+.arrows {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* The arrows stay dotted and still; the one the call is following just takes the accent color. The idle color is
+   mixed rather than faded with opacity, so the solid heads cover the ends of the dotted lines. */
+.arrow,
+.arrowActive {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 3 5;
+  transition: stroke 0.3s;
+}
+
+.arrow {
+  stroke: color-mix(in srgb, var(--lift-muted) 55%, var(--lift-surface));
+}
+
+.arrowActive {
+  stroke: var(--lift-accent);
+}
+
+.head {
+  fill: color-mix(in srgb, var(--lift-muted) 55%, var(--lift-surface));
+}
+
+.headActive {
+  fill: var(--lift-accent);
+}
+
+@keyframes liftFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes liftPop {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes liftRise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Stack the panels when the explainer itself is narrow, whatever the screen; the arrows then loop around the right. */
+@container (max-width: 860px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+    padding-right: 28px;
+  }
+}
+
+/* Compact mode, for phones: one file at a time behind a tab strip, smaller type, and long lines wrapped with a
+   hanging indent instead of scrolling sideways. */
+.compact {
+  gap: 12px;
+  padding: 12px;
+}
+
+.compact .columns {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding-right: 0;
+}
+
+.compact .column:first-child:not(:has(.panel:not([hidden]))) {
+  display: none;
+}
+
+.compact .panel[hidden] {
+  display: none;
+}
+
+.compact .tab {
+  display: none;
+}
+
+.compact .code {
+  min-height: calc(10 * 1.7em + 16px);
+  border-radius: 0 0 8px 8px;
+  font-size: 0.72rem;
+  line-height: 1.7;
+}
+
+.compact .line {
+  white-space: pre-wrap;
+}
+
+.compact .line [data-text] {
+  display: inline-block;
+  max-width: calc(100% - 4ch);
+  vertical-align: top;
+}
+
+.compact .badge {
+  display: inline-block;
+  margin: 2px 0 2px 8px;
+  line-height: 1.3;
+}
+
+.compact .play {
+  width: 32px;
+  height: 32px;
+}
+
+.compact .segmented button {
+  padding: 8px 10px;
+  font-size: 0.8rem;
+}
+
+.compact .phases li {
+  padding: 5px 7px;
+  font-size: 0.6rem;
+}
+
+.files {
+  display: flex;
+  margin-bottom: -12px;
+  border: 1px solid var(--lift-line);
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  background: var(--lift-surface);
+  overflow: hidden;
+}
+
+.files button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 0;
+  background: transparent;
+  font: 600 0.72rem/1 var(--lift-mono);
+  color: var(--lift-muted);
+  cursor: pointer;
+}
+
+.files button + button {
+  border-left: 1px solid var(--lift-line);
+}
+
+.files button[aria-selected='true'] {
+  color: var(--ifm-font-color-base);
+  background: var(--lift-code);
+}
+
+/* The file the execution pointer is in. */
+.files button.here::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--lift-ip-mark);
+  vertical-align: 1px;
+}
+
+.files button:focus-visible {
+  outline: 2px solid var(--lift-accent);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root *::before {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}

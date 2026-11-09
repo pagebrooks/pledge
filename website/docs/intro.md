@@ -1,10 +1,10 @@
 ---
-slug: /
+slug: /getting-started
 title: Getting started
 description: Design by Contract for .NET with preconditions, postconditions and Old() snapshots checked by a Roslyn source generator.
 ---
 
-# Pledge
+# Getting started
 
 Pledge is Design by Contract for .NET 10 and later. You write preconditions, postconditions and `Old()`
 snapshots as ordinary C# at the top of a method, and a Roslyn source generator checks them at build time
@@ -74,4 +74,4 @@ the checks are off by default and the assembly is the one you would get without 
 - [Enforcement modes](modes.md): `Ignore`, `Observe`, `Enforce` and `EnforceFailFast`, per build and per kind of contract.
 - [Contracts as property tests](testing.md): `Pledge.Testing` runs the same contracts as property-based tests.
 - [Diagnostics](/rules): what each `PLEDGE` analyzer reports and how to fix it.
-- [Compared with other tools](comparison.md): Pledge next to Metalama, PostSharp and Code Contracts, including what each one costs.
+- [Compared with other tools](comparison.md): Pledge next to Metalama, PostSharp and .NET Framework Code Contracts, including what each one costs.

@@ -1,6 +1,6 @@
 ---
 title: Compared with other tools
-description: How Pledge compares with Metalama, PostSharp, Code Contracts and nullable reference types, including what each one costs.
+description: How Pledge compares with Metalama, PostSharp, .NET Framework Code Contracts and nullable reference types, including what each one costs.
 ---
 
 # Compared with other tools
@@ -20,7 +20,7 @@ This page reflects each tool as of October 30, 2026. If something here is out of
   predicate such as `[NotNull]` or `[Range]`. They cannot relate a result to the arguments or to an earlier
   state.
 - **`Old()` snapshots.** A postcondition can compare against any value as it was when the method was entered.
-  No maintained .NET tool offers this; Code Contracts did.
+  No maintained .NET tool offers this; .NET Framework Code Contracts did.
 - **Contracts become property-based tests.** [`Pledge.Testing`](testing.md) generates inputs, lets the
   preconditions discard the ones they reject, and uses the postconditions as the oracle. You write the
   contract once, and it is checked when the code runs and again by the tests.
@@ -37,7 +37,7 @@ This page reflects each tool as of October 30, 2026. If something here is out of
 
 ## Capabilities
 
-| | Pledge | Metalama and PostSharp contracts | Code Contracts | Nullable reference types and BCL helpers |
+| | Pledge | [Metalama](https://doc.postsharp.net/metalama/patterns/contracts) and [PostSharp](https://doc.postsharp.net/il/contracts) contracts | [.NET Framework Code Contracts](https://learn.microsoft.com/en-us/dotnet/framework/debug-trace-profile/code-contracts) | [Nullable reference types](https://learn.microsoft.com/en-us/dotnet/csharp/nullable-references) and BCL helpers |
 | --- | --- | --- | --- | --- |
 | Preconditions | Any boolean expression | Attributes from a fixed vocabulary (`[NotNull]`, `[Range]`, `[Regex]`…) or custom attribute classes | Any boolean expression | Null checks: compile-time warnings, plus `ThrowIfNull` and similar helpers |
 | Postconditions | Any boolean expression over the result, the arguments and the object's state | Attributes on return values and `out` parameters | Any boolean expression | Annotations such as `[return: NotNull]`, checked at compile time only |
@@ -60,7 +60,7 @@ A few more tools are related but do a different job:
   cover most of that at compile time.
 - **Guard clause libraries** such as Ardalis.GuardClauses and CommunityToolkit.Diagnostics make hand-written
   argument checks shorter. They cover preconditions only, as code inside the method body.
-- **JetBrains `[ContractAnnotation]`** describes input-to-output rules such as `"null => halt"` for ReSharper
+- **JetBrains [`[ContractAnnotation]`](https://www.jetbrains.com/help/resharper/Reference__Code_Annotation_Attributes.html)** describes input-to-output rules such as `"null => halt"` for ReSharper
   and Rider to check while you edit. Nothing is checked when the program runs.
 - **[Dafny](https://dafny.org)** is a language that proves its contracts before compiling to C#, among other
   targets. It gives stronger guarantees, but you write the code in Dafny rather than C#.
@@ -75,7 +75,7 @@ free part.
 | Pledge | MIT | Nothing. There is no paid tier, and none is planned for the core. You can [sponsor its development](https://github.com/sponsors/pagebrooks). |
 | [Metalama](https://www.postsharp.net/metalama/pricing) | MIT for the open-source packages, including `Metalama.Patterns.Contracts`. Its pricing page notes that only the latest release line stays under MIT. | The Visual Studio tooling is free in the Community edition for individuals, companies of up to three users and non-commercial use. Larger commercial teams need the paid Professional or Enterprise edition, which also adds toolkits. |
 | [PostSharp](https://www.postsharp.net/il/essentials) | Commercial licence agreement | Contracts are free without limit in the free Essentials edition. Most other premium features are limited to 1,000 lines of code without a paid licence. |
-| Code Contracts | MIT | Nothing, but it only ever ran on .NET Framework and is no longer maintained. |
+| [.NET Framework Code Contracts](https://github.com/microsoft/CodeContracts) | MIT | Nothing, but it only ever ran on .NET Framework and is no longer maintained. |
 | JetBrains.Annotations | MIT | The checks run in ReSharper or Rider, which are free for non-commercial use and paid for commercial use. |
 | Dafny | MIT | Nothing. |
 
@@ -88,8 +88,8 @@ from the vendors' own pages on October 30, 2026; check those pages before you bu
   from other assemblies, through delegates or reflection, or through a base class or interface to an override,
   are not checked. [PLEDGE006](/rules/PLEDGE006) points out the ones in your own project. Tools that rewrite IL
   check inside the method instead, so every caller is covered.
-- **No invariants or contract inheritance yet.** Both are planned for v1.0. Metalama, PostSharp and Code
-  Contracts have them.
+- **No invariants or contract inheritance yet.** Both are planned for v1.0. Metalama, PostSharp and .NET
+  Framework Code Contracts have them.
 - **No attribute vocabulary.** There is no `[Range]` or `[Regex]` library; you write the condition as an
   expression.
 - **.NET 10 and C# 14 or later only.** Interceptors need a current compiler. The `Pledge.Attributes` package
