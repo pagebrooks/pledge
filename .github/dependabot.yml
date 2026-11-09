@@ -11,6 +11,10 @@ updates:
       xunit:
         patterns:
           - "xunit*"
+      # TUnit (engine) and TUnit.Core must stay on the same version; a split bump fails at test time.
+      tunit:
+        patterns:
+          - "TUnit*"
     ignore:
       # Pinned to the oldest supported compiler on purpose; see Directory.Packages.props.
       - dependency-name: "Microsoft.CodeAnalysis.CSharp"
