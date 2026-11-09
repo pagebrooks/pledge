@@ -22,7 +22,7 @@
 
   <ItemGroup Label="Testing bridge">
     <PackageVersion Include="CsCheck" Version="5.0.1" />
-    <PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.2" />
+    <PackageVersion Include="xunit.v3.extensibility.core" Version="4.0.3" />
     <PackageVersion Include="TUnit.Core" Version="1.81.16" />
   </ItemGroup>
 
@@ -31,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Tests">
-    <PackageVersion Include="xunit.v3" Version="4.0.2" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <!-- The TUnit adapter's tests run under TUnit itself; kept on the same version as TUnit.Core above. -->
