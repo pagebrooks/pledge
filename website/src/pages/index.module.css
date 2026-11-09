@@ -1,0 +1,225 @@
+/* A quiet page: type and space carry it, with one accent color and hairlines instead of boxes. */
+/* The hero keeps the product name and one sentence short, so the explainer shows without scrolling. */
+.hero {
+  padding-top: 2.5rem;
+}
+
+.brand {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.mark {
+  width: 44px;
+  height: 44px;
+  flex: none;
+}
+
+.wordmark {
+  margin: 0;
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.alpha {
+  padding: 3px 10px;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 999px;
+  font: 600 0.72rem/1.4 var(--ifm-font-family-monospace);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.heroLead {
+  max-width: 46rem;
+  margin-bottom: 0;
+  font-size: 1.2rem;
+  line-height: 1.5;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.start {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 24px;
+  align-items: center;
+}
+
+.startLink {
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  align-items: center;
+  font-weight: 600;
+}
+
+.install {
+  flex: 0 1 27rem;
+  min-width: 0;
+}
+
+.install :global(.theme-code-block) {
+  margin-bottom: 0;
+}
+
+.section {
+  padding-top: 6rem;
+}
+
+.overline {
+  margin-bottom: 0.6rem;
+  font: 600 0.78rem/1 var(--ifm-font-family-monospace);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ifm-color-primary);
+}
+
+.sectionTitle {
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.lead {
+  max-width: 38rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.15rem;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem 3rem;
+  margin-top: 2.5rem;
+}
+
+.column {
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ifm-color-emphasis-300);
+}
+
+.column h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.column p {
+  margin-bottom: 0;
+  color: var(--ifm-color-emphasis-800);
+}
+
+.number {
+  display: block;
+  margin-bottom: 0.75rem;
+  font: 600 0.8rem/1 var(--ifm-font-family-monospace);
+  color: var(--ifm-color-primary);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 2rem 0 0;
+  font-weight: 600;
+}
+
+.features {
+  display: grid;
+  gap: 4rem;
+  margin-top: 3.5rem;
+}
+
+.feature {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: 1.5rem 4rem;
+  align-items: start;
+}
+
+.feature h3 {
+  margin-bottom: 0.6rem;
+  font-size: 1.4rem;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.feature p {
+  color: var(--ifm-color-emphasis-800);
+}
+
+.feature a {
+  font-weight: 600;
+}
+
+.featureCode {
+  min-width: 0;
+}
+
+.featureCode > :last-child :global(.theme-code-block) {
+  margin-bottom: 0;
+}
+
+/* Messages wrap instead of scrolling, so the whole line can be read at a glance. */
+.wrap code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 5rem;
+}
+
+.facts h3 {
+  font-size: 1rem;
+}
+
+.facts p {
+  font-size: 0.95rem;
+}
+
+.closing {
+  padding-bottom: 6rem;
+}
+
+@media (max-width: 996px) {
+  .hero {
+    padding-top: 3.5rem;
+  }
+
+  .section {
+    padding-top: 4.5rem;
+  }
+
+  .feature,
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Fit the whole install command on a phone instead of scrolling it. */
+  .install :global(.theme-code-block) {
+    font-size: 0.8rem;
+  }
+}

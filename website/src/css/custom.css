@@ -1,4 +1,4 @@
-/* Docusaurus's Infima theme with the primary color changed; everything else is the default. */
+/* Docusaurus's Infima theme with the primary color changed, flat code blocks and a hairline under the navbar. */
 :root {
   --ifm-color-primary: #2e6b5e;
   --ifm-color-primary-dark: #295f54;
@@ -8,6 +8,11 @@
   --ifm-color-primary-lighter: #357c6d;
   --ifm-color-primary-lightest: #3c8c7b;
   --ifm-code-font-size: 95%;
+  --site-code-background: var(--ifm-color-emphasis-100);
+  --site-code-ink: var(--ifm-font-color-base);
+  --site-code-keyword: #7a3e9d;
+  --site-code-string: #9a4a12;
+  --site-code-comment: #80868f;
 }
 
 [data-theme='dark'] {
@@ -18,4 +23,23 @@
   --ifm-color-primary-light: #71c7b4;
   --ifm-color-primary-lighter: #7bcbb9;
   --ifm-color-primary-lightest: #97d7c9;
+  --site-code-background: #242526;
+  --site-code-keyword: #c792ea;
+  --site-code-string: #f3a76b;
+  --site-code-comment: #8b929c;
+}
+
+.theme-code-block {
+  border: 1px solid var(--ifm-color-emphasis-300);
+  box-shadow: none;
+}
+
+.navbar {
+  box-shadow: none;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.footer--light {
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+  background: var(--ifm-background-color);
 }

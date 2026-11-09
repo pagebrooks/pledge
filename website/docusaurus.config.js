@@ -1,12 +1,23 @@
 // @ts-check
-import { themes as prismThemes } from 'prism-react-renderer';
-
 const repository = 'https://github.com/pagebrooks/pledge';
+
+// A quiet syntax theme: keywords, strings and comments get a color and everything else stays in the text color.
+// The colors are CSS variables from custom.css, so one theme serves light and dark mode and matches the explainer.
+const codeTheme = {
+  plain: { color: 'var(--site-code-ink)', backgroundColor: 'var(--site-code-background)' },
+  styles: [
+    { types: ['comment', 'prolog', 'doctype', 'cdata'], style: { color: 'var(--site-code-comment)', fontStyle: 'italic' } },
+    { types: ['keyword', 'tag'], style: { color: 'var(--site-code-keyword)' } },
+    { types: ['string', 'char', 'attr-value'], style: { color: 'var(--site-code-string)' } },
+    { types: ['attr-name'], style: { color: 'var(--site-code-keyword)' } },
+  ],
+};
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Pledge',
   tagline: 'Design by Contract for .NET',
+  favicon: 'img/logo.svg',
   url: 'https://pledge.pagebrooks.com',
   baseUrl: '/',
   organizationName: 'pagebrooks',
@@ -65,6 +76,7 @@ const config = {
       },
       navbar: {
         title: 'Pledge',
+        logo: { alt: '', src: 'img/logo.svg' },
         items: [
           { type: 'docSidebar', sidebarId: 'docs', label: 'Docs', position: 'left' },
           { type: 'docSidebar', sidebarId: 'rules', docsPluginId: 'rules', label: 'Diagnostics', position: 'left' },
@@ -74,12 +86,12 @@ const config = {
         ],
       },
       footer: {
-        style: 'dark',
+        style: 'light',
         links: [
           {
             title: 'Docs',
             items: [
-              { label: 'Getting started', to: '/' },
+              { label: 'Getting started', to: '/getting-started' },
               { label: 'Diagnostics', to: '/rules' },
             ],
           },
@@ -95,8 +107,8 @@ const config = {
         copyright: `Copyright © ${new Date().getFullYear()} Page Brooks. MIT licensed.`,
       },
       prism: {
-        theme: prismThemes.github,
-        darkTheme: prismThemes.dracula,
+        theme: codeTheme,
+        darkTheme: codeTheme,
         additionalLanguages: ['csharp', 'bash', 'powershell'],
       },
     }),
